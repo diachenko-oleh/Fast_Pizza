@@ -36,14 +36,6 @@ require __DIR__ . '/header.php';
           <p>Номер телефону: <a href="tel:+380999999999">+380 99 999 99 99</a></p>
           <p>Юридична адреса: Priportova Street, 34/2, Cherkasy, Cherkasy Oblast, Ukraine</p>
         </div>
-
-        <div class="payment-section">
-          <h3>Ми приймаємо:</h3>
-          <div class="payment-icons">
-            <span class="payment-icon">карта</span>
-            <span class="payment-icon">карта</span>
-          </div>
-        </div>
     </main>
 
     <?php require __DIR__ . '/footer.php'; ?>
