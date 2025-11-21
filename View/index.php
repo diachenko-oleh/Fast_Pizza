@@ -75,7 +75,7 @@ require __DIR__ . '/header.php';
                     <?php if (!empty($p['img'])): ?>
                         <img src="<?php echo htmlspecialchars($p['img']); ?>" alt="<?php echo htmlspecialchars($p['name']); ?>">
                     <?php else: ?>
-                        <div class="thumb-placeholder">Зображення</div>
+                        <img src="images/pizza.jpg" alt="<?php echo htmlspecialchars($p['name']); ?>" />
                     <?php endif; ?>
                 </div>
                 <div class="pmeta">

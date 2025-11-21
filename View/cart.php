@@ -18,29 +18,30 @@ function find_by_key($arr, $key) {
   return null;
 }
 
-if (!empty($_GET['add'])) {
-  $id = intval($_GET['add']);
-  $p = find_product($products, $id);
-  if ($p) {
-    $k = 'pizza_' . $id;
-    if (!isset($_SESSION['cart'][$k])) {
-      $_SESSION['cart'][$k] = ['type'=>'pizza','id'=>$id,'name'=>$p['name'],'price'=>$p['price'],'img'=>$p['img'],'qty'=>0];
-    }
-    $_SESSION['cart'][$k]['qty']++;
-  }
-}
+// if (!empty($_GET['add'])) {
+//   $id = intval($_GET['add']);
+//   $p = find_product($products, $id);
+//   if ($p) {
+//     $k = 'pizza_' . $id;
+//     if (!isset($_SESSION['cart'][$k])) {
+//       $_SESSION['cart'][$k] = ['type'=>'pizza','id'=>$id,'name'=>$p['name'],'price'=>$p['price'],'img'=>$p['img'],'qty'=>0];
+//     }
+//     $_SESSION['cart'][$k]['qty']++;
+//   }
+// }
+// ?
 
-if (!empty($_GET['add_drink'])) {
-  $dkey = $_GET['add_drink'];
-  $d = find_by_key($drinks, $dkey);
-  if ($d) {
-    $k = 'drink_' . $d['key'];
-    if (!isset($_SESSION['cart'][$k])) {
-      $_SESSION['cart'][$k] = ['type'=>'drink','key'=>$d['key'],'name'=>$d['name'],'price'=>$d['price'],'img'=>'images/drink.jpg','qty'=>0];
-    }
-    $_SESSION['cart'][$k]['qty']++;
-  }
-}
+// if (!empty($_GET['add_drink'])) {
+//   $dkey = $_GET['add_drink'];
+//   $d = find_by_key($drinks, $dkey);
+//   if ($d) {
+//     $k = 'drink_' . $d['key'];
+//     if (!isset($_SESSION['cart'][$k])) {
+//       $_SESSION['cart'][$k] = ['type'=>'drink','key'=>$d['key'],'name'=>$d['name'],'price'=>$d['price'],'qty'=>0];
+//     }
+//     $_SESSION['cart'][$k]['qty']++;
+//   }
+// }
 
 if (!empty($_GET['qty'])) {
   $key = $_GET['qty'];
@@ -82,11 +83,18 @@ if (!empty($_GET['clear'])) {
                 ?>
                   <tr class="cart-item">
                     <td class="item-image">
-                      <div class="item-thumb">
+                      <?php
+                        $isDrinkNoImage = empty($item['img']) && !empty($item['type']) && $item['type'] === 'drink';
+                      ?>
+                      <div class="item-thumb<?php echo $isDrinkNoImage ? ' item-thumb--empty' : ''; ?>">
                         <?php if (!empty($item['img'])): ?>
                           <img src="<?php echo htmlspecialchars($item['img']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">
                         <?php else: ?>
-                          <span style="color:#aaa;font-size:12px;">Зображення</span>
+                          <?php if ($isDrinkNoImage): ?>
+                            <!-- intentionally empty for drinks without images -->
+                          <?php else: ?>
+                            <img src="images/pizza.jpg" alt="<?php echo htmlspecialchars($item['name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">
+                          <?php endif; ?>
                         <?php endif; ?>
                       </div>
                     </td>
