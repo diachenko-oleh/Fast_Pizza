@@ -1,6 +1,6 @@
 <?php
 session_start();
-require __DIR__ . '/products.php';
+require __DIR__ . '/../Model/products.php';
 
 $page_title = 'FAST PIZZA — Кошик';
 require __DIR__ . '/header.php';

@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
 }
 
 $page_title = 'FAST PIZZA — Меню';
-require __DIR__ . '/products.php';
+require __DIR__ . '/../Model/products.php';
 
 foreach ($drinks as &$d) {
     if (!isset($d['key']) || empty($d['key'])) {
