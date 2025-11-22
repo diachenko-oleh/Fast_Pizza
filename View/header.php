@@ -22,4 +22,20 @@
 					<li class="nav-item"><a class="btn btn-outline-dark ms-2" href="cart.php">Кошик</a></li>
 				</ul>
 			</div>
-		</nav>
+			
+			<a href="cart.php" class="floating-cart-btn">
+    			Кошик
+			</a>
+
+		<script>
+			document.addEventListener("scroll", () => {
+    			const btn = document.querySelector(".floating-cart-btn");
+
+    			if (window.scrollY > 150) {
+        			btn.classList.add("show");
+    			} else {
+        			btn.classList.remove("show");
+   				}
+			});
+		</script>
+	</nav>
