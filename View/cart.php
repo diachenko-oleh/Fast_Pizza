@@ -47,16 +47,16 @@ require __DIR__ . '/../Presenter/cart_actions.php';
                     </td>
                     <td class="item-controls">
                       <div class="qty-control">
-                        <a href="cart.php?qty=<?php echo urlencode($key); ?>&action=dec" class="qty-btn minus">−</a>
+                        <button type="button" class="qty-btn minus" data-key="<?php echo urlencode($key); ?>" onclick="changeQty(this, 'dec')">−</button>
                         <input type="text" class="qty-input" value="<?php echo $item['qty']; ?>" readonly>
-                        <a href="cart.php?qty=<?php echo urlencode($key); ?>&action=inc" class="qty-btn plus">+</a>
+                        <button type="button" class="qty-btn plus" data-key="<?php echo urlencode($key); ?>" onclick="changeQty(this, 'inc')">+</button>
                       </div>
                     </td>
                     <td class="item-total">
                       <strong><?php echo $subtotal; ?> грн</strong>
                     </td>
                     <td class="item-remove">
-                      <a href="cart.php?remove=<?php echo urlencode($key); ?>" class="remove-btn" title="Видалити">✕</a>
+                      <button type="button" class="remove-btn" data-key="<?php echo urlencode($key); ?>" onclick="removeItem(this)" title="Видалити">✕</button>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -140,6 +140,90 @@ require __DIR__ . '/../Presenter/cart_actions.php';
     </main>
 
     <script>
+      function changeQty(btn, action) {
+        const key = btn.getAttribute('data-key');
+        const row = btn.closest('.cart-item');
+        const input = row.querySelector('.qty-input');
+        let newQty = parseInt(input.value);
+
+        if (action === 'inc') {
+          newQty++;
+        } else if (action === 'dec' && newQty > 1) {
+          newQty--;
+        }
+
+        input.value = newQty;
+        
+        const priceText = row.querySelector('.item-price').textContent;
+        const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
+        const subtotal = price * newQty;
+        row.querySelector('.item-total strong').textContent = subtotal + ' грн';
+        
+        updateTotalPrice();
+        
+        saveCartToLocalStorage();
+
+        fetch('cart.php?qty=' + encodeURIComponent(key) + '&action=' + action, {
+          method: 'GET',
+          credentials: 'same-origin'
+        })
+        .catch(err => {
+          console.error('Ошибка при синхронизации с сервером:', err);
+        });
+      }
+
+      function removeItem(btn) {
+        const key = btn.getAttribute('data-key');
+        const row = btn.closest('.cart-item');
+      
+        row.remove();
+        
+        updateTotalPrice();
+        
+        saveCartToLocalStorage();
+        
+        const cartTable = document.querySelector('.cart-table tbody');
+        if (cartTable.children.length === 0) {
+          location.reload();
+        }
+        
+        fetch('cart.php?remove=' + encodeURIComponent(key), {
+          method: 'GET',
+          credentials: 'same-origin'
+        })
+        .catch(err => {
+          console.error('Ошибка при синхронизации с сервером:', err);
+        });
+      }
+
+      function updateTotalPrice() {
+        let total = 0;
+        document.querySelectorAll('.cart-item').forEach(row => {
+          const totalText = row.querySelector('.item-total strong').textContent;
+          const subtotal = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+          total += subtotal;
+        });
+        const totalElement = document.querySelector('.form-total strong');
+        if (totalElement) {
+          totalElement.textContent = total + ' грн';
+        }
+      }
+
+      function saveCartToLocalStorage() {
+        const cart = {};
+        document.querySelectorAll('.cart-item').forEach(row => {
+          const button = row.querySelector('.qty-btn');
+          const key = button.getAttribute('data-key');
+          const qty = parseInt(row.querySelector('.qty-input').value);
+          const priceText = row.querySelector('.item-price').textContent;
+          const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
+          const name = row.querySelector('.item-name').textContent;
+          
+          cart[key] = { name, price, qty };
+        });
+        localStorage.setItem('cart', JSON.stringify(cart));
+      }
+
       document.getElementById('orderForm')?.addEventListener('submit', function(e) {
         const name = document.querySelector('input[name="name"]').value.trim();
         const payment = document.querySelector('input[name="payment"]:checked');
