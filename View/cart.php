@@ -5,64 +5,7 @@ require __DIR__ . '/../Model/products.php';
 $page_title = 'FAST PIZZA — Кошик';
 require __DIR__ . '/header.php';
 
-if (!isset($_SESSION['cart'])) {
-  $_SESSION['cart'] = [];
-}
-
-function find_product($products, $id) {
-  foreach ($products as $p) if ($p['id'] == $id) return $p;
-  return null;
-}
-function find_by_key($arr, $key) {
-  foreach ($arr as $a) if ($a['key'] === $key) return $a;
-  return null;
-}
-
-// if (!empty($_GET['add'])) {
-//   $id = intval($_GET['add']);
-//   $p = find_product($products, $id);
-//   if ($p) {
-//     $k = 'pizza_' . $id;
-//     if (!isset($_SESSION['cart'][$k])) {
-//       $_SESSION['cart'][$k] = ['type'=>'pizza','id'=>$id,'name'=>$p['name'],'price'=>$p['price'],'img'=>$p['img'],'qty'=>0];
-//     }
-//     $_SESSION['cart'][$k]['qty']++;
-//   }
-// }
-// ?
-
-// if (!empty($_GET['add_drink'])) {
-//   $dkey = $_GET['add_drink'];
-//   $d = find_by_key($drinks, $dkey);
-//   if ($d) {
-//     $k = 'drink_' . $d['key'];
-//     if (!isset($_SESSION['cart'][$k])) {
-//       $_SESSION['cart'][$k] = ['type'=>'drink','key'=>$d['key'],'name'=>$d['name'],'price'=>$d['price'],'qty'=>0];
-//     }
-//     $_SESSION['cart'][$k]['qty']++;
-//   }
-// }
-
-if (!empty($_GET['qty'])) {
-  $key = $_GET['qty'];
-  $action = $_GET['action'] ?? '';
-  if (isset($_SESSION['cart'][$key])) {
-    if ($action === 'inc') {
-      $_SESSION['cart'][$key]['qty']++;
-    } elseif ($action === 'dec' && $_SESSION['cart'][$key]['qty'] > 1) {
-      $_SESSION['cart'][$key]['qty']--;
-    }
-  }
-}
-
-if (!empty($_GET['remove'])) {
-  $rem = $_GET['remove'];
-  if (isset($_SESSION['cart'][$rem])) unset($_SESSION['cart'][$rem]);
-}
-
-if (!empty($_GET['clear'])) {
-  $_SESSION['cart'] = [];
-}
+require __DIR__ . '/../Presenter/cart_actions.php';
 ?>
 
     <main class="container cart-container">
