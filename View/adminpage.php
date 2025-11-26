@@ -58,7 +58,6 @@ $msg = $_GET['msg'] ?? '';
 			<table class="table admin-table table-hover align-middle">
 				<thead>
 					<tr>
-						<th style="width:64px;">ID</th>
 						<th>Назва</th>
 						<th style="width:140px;">Ціна</th>
 						<th style="width:120px;">Піца</th>
@@ -68,10 +67,6 @@ $msg = $_GET['msg'] ?? '';
 				<tbody>
 				<?php foreach ($products as $p): ?>
 					<tr>
-						<td>
-							<?php echo $p['id']; ?>
-							<input type="hidden" name="id[]" value="<?php echo $p['id']; ?>">
-						</td>
 						<td>
 							<input type="text" name="name[]" value="<?php echo htmlspecialchars($p['name']); ?>" class="form-control">
 						</td>
