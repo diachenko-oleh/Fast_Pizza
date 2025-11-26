@@ -26,11 +26,11 @@ $msg = $_GET['msg'] ?? '';
 	<div class="admin-card">
 		<div class="admin-header">
 			<div>
-				<div class="admin-title">Панель администратора — Товари</div>
-				<div class="text-muted">Керуйте товарами: додайте, редагуйте або видаліть позиції.</div>
+				<div class="admin-title">Панель адміністратора — Товари</div>
+				<div class="text-muted">Керуйте товарами: додавайте, редагуйте або видаліть позиції.</div>
 			</div>
 			<div>
-				<a href="index.php" class="btn btn-outline-secondary">Перейти на сайт</a>
+				<a href="index.php" class="btn btn-outline-secondary">Перейти до сайту</a>
 			</div>
 		</div>
 
@@ -40,10 +40,10 @@ $msg = $_GET['msg'] ?? '';
 
 		<section class="admin-add mb-3">
 			<h5>Додати товар</h5>
-			<form method="post" action="../Presenter/admin_actions.php" class="admin-create-form">
+			<form method="post" action="../Presenter/admin_actions.php" class="admin-create-form" onsubmit="return validatePrice(this);">
 				<input type="hidden" name="action" value="create">
 				<input type="text" name="name" class="form-control" placeholder="Назва" required style="max-width:320px; display:inline-block;">
-				<input type="number" step="0.01" name="price" class="form-control" placeholder="Ціна" style="max-width:140px; display:inline-block;">
+				<input type="number" step="0.01" name="price" class="form-control" placeholder="Ціна" min="0.01" required style="max-width:140px; display:inline-block;">
 				<label class="d-inline-flex align-items-center ms-2">
 					<input type="checkbox" name="isPizza" value="1" class="form-check-input me-2"> Піца
 				</label>
@@ -51,7 +51,7 @@ $msg = $_GET['msg'] ?? '';
 			</form>
 		</section>
 
-		<form method="post" action="../Presenter/admin_actions.php">
+		<form method="post" action="../Presenter/admin_actions.php" onsubmit="return validateBulkPrices(this);">
 			<input type="hidden" name="action" value="bulk_update">
 
 			<div class="table-responsive">
@@ -67,11 +67,12 @@ $msg = $_GET['msg'] ?? '';
 				<tbody>
 				<?php foreach ($products as $p): ?>
 					<tr>
+						<input type="hidden" name="id[]" value="<?php echo $p['id']; ?>">
 						<td>
 							<input type="text" name="name[]" value="<?php echo htmlspecialchars($p['name']); ?>" class="form-control">
 						</td>
 						<td>
-							<input type="number" step="0.01" name="price[]" value="<?php echo $p['price']; ?>" class="form-control">
+							<input type="number" step="0.01" name="price[]" value="<?php echo $p['price']; ?>" class="form-control price-input" min="0.01" required>
 						</td>
 						<td>
 							<input type="checkbox" name="isPizza[]" value="<?php echo $p['id']; ?>" <?php echo !empty($p['ispizza']) ? 'checked' : ''; ?> class="form-check-input">
@@ -95,5 +96,30 @@ $msg = $_GET['msg'] ?? '';
  
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script>
+	function validatePrice(form) {
+		const priceInput = form.querySelector('input[name="price"]');
+		const price = parseFloat(priceInput.value);
+		if (price <= 0) {
+			alert('Ціна повинна бути більше за 0');
+			priceInput.focus();
+			return false;
+		}
+		return true;
+	}
+
+	function validateBulkPrices(form) {
+		const priceInputs = form.querySelectorAll('input.price-input');
+		for (let input of priceInputs) {
+			const price = parseFloat(input.value);
+			if (price <= 0) {
+				alert('Усі ціни повинні бути більше за 0');
+				input.focus();
+				return false;
+			}
+		}
+		return true;
+	}
+	</script>
 </body>
 </html>
