@@ -1,23 +1,17 @@
 <?php
+require __DIR__ . '/db.php';
 
-$url = "https://6920637531e684d7bfccd5fa.mockapi.io/api/pizzav1/Product";
-
-$response = file_get_contents($url);
-
-if ($response === false) {
-    die("Помилка отримання даних з MockAPI");
-}
-
-$data = json_decode($response, true);
+$sql = "SELECT id, name, price, isPizza FROM products";
+$stmt = $pdo->query($sql);
+$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $products = [];
-$drinks = [];
+$drinks   = [];
 
 foreach ($data as $item) {
-    if (isset($item["isPizza"]) && $item["isPizza"] === true) {
+    if (!empty($item["ispizza"])) {
         $products[] = $item;
     } else {
         $drinks[] = $item;
     }
 }
-return null;
