@@ -29,17 +29,12 @@ if ($action === 'bulk_update') {
     $ispizza_flags = $_POST['isPizza'] ?? [];
 
     $items = [];
-    $error = false;
     
     for ($i = 0; $i < count($ids); $i++) {
         $id = intval($ids[$i]);
         if ($id <= 0) continue;
 
         $price = floatval($prices[$i] ?? 0);
-        if ($price <= 0) {
-            $error = true;
-            break;
-        }
 
         $items[] = [
             'id' => $id,
@@ -49,9 +44,7 @@ if ($action === 'bulk_update') {
         ];
     }
 
-    if ($error) {
-        $msg = 'Ціна не може бути менша або рівна 0';
-    } elseif (empty($items)) {
+    if (empty($items)) {
         $msg = 'Немає даних для збереження';
     } else {
         $ok = update_products_bulk($items);
@@ -67,17 +60,11 @@ if ($action === 'create') {
     $price = floatval($_POST['price'] ?? 0);
     $isPizza = isset($_POST['isPizza']) ? 1 : 0;
 
-    if ($name === '') {
-        $msg = 'Назва не може бути порожньою';
-    } elseif ($price <= 0) {
-        $msg = 'Ціна не може бути менша або рівна 0';
+    $newId = create_product($name, $price, $isPizza);
+    if ($newId === false) {
+    $msg = 'Помилка при створенні товару';
     } else {
-        $newId = create_product($name, $price, $isPizza);
-        if ($newId === false) {
-            $msg = 'Помилка при створенні товару';
-        } else {
-            $msg = 'Товар додано: ' . htmlspecialchars($name);
-        }
+        $msg = 'Товар додано: ' . htmlspecialchars($name);
     }
 
     header('Location: ../View/adminpage.php?msg=' . urlencode($msg));
