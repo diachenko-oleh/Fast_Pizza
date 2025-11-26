@@ -97,20 +97,7 @@ $msg = $_GET['msg'] ?? '';
 	</div>
 </main>
 
-<script>
-function copyIndex(id) {
-	const row = Array.from(document.querySelectorAll('input[name="id[]"]')).find(i => i.value == id);
-	if (!row) return;
-	const tr = row.closest('tr');
-	const name = tr.querySelector('input[name="name[]"]').value;
-	const price = tr.querySelector('input[name="price[]"]').value;
-	const addName = document.querySelector('form.admin-create-form input[name="name"]');
-	const addPrice = document.querySelector('form.admin-create-form input[name="price"]');
-	if (addName) addName.value = name + ' (копія)';
-	if (addPrice) addPrice.value = price;
-	window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-</script>
+ 
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
