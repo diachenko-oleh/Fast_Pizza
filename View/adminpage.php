@@ -43,7 +43,7 @@ $msg = $_GET['msg'] ?? '';
 			<form method="post" action="../Presenter/admin_actions.php" class="admin-create-form">
 				<input type="hidden" name="action" value="create">
 				<input type="text" name="name" class="form-control" placeholder="Назва" required style="max-width:320px; display:inline-block;">
-				<input type="number" step="0.01" name="price" class="form-control" placeholder="Ціна" value="0" style="max-width:140px; display:inline-block;">
+				<input type="number" step="0.01" name="price" class="form-control" placeholder="Ціна" style="max-width:140px; display:inline-block;">
 				<label class="d-inline-flex align-items-center ms-2">
 					<input type="checkbox" name="isPizza" value="1" class="form-check-input me-2"> Піца
 				</label>
