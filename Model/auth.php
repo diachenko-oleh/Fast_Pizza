@@ -80,20 +80,6 @@ function login_client_by_phone($phone, $password) {
     return ['success' => true, 'client' => $client];
 }
 
-//Вхід користувача через email (перевірка пароля)
-function login_client_by_email($email, $password) {
-    $client = get_client_by_email($email);
-    if (!$client) {
-        return ['success' => false, 'message' => 'Email не знайдено'];
-    }
-
-    if (!password_verify($password, $client['password_hash'])) {
-        return ['success' => false, 'message' => 'Невірний пароль'];
-    }
-
-    return ['success' => true, 'client' => $client];
-}
-
 //Отримання поточного користувача з сесії
 function get_current_user_client() {
     if (isset($_SESSION['client_id'])) {

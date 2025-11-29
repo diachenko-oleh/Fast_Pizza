@@ -36,12 +36,15 @@ if (isset($_SESSION['success'])) {
 
                             <div class="mb-3">
                                 <label for="phone" class="form-label">Телефон</label>
-                                <input type="tel" class="form-control" id="phone" name="phone" placeholder="+38 (0XX) XXX-XX-XX" required>
+                                <input type="tel" class="form-control" id="phone" name="phone" placeholder="+38 (0XX) XXX-XX-XX" pattern="\+38[0-9]{9,10}" inputmode="tel" title="Формат: +38XXXXXXXXXX" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="password" class="form-label">Пароль</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleLoginPassword">Показати</button>
+                                </div>
                             </div>
 
                             <div class="d-grid gap-2">
@@ -67,7 +70,7 @@ if (isset($_SESSION['success'])) {
 
                             <div class="mb-3">
                                 <label for="reg_phone" class="form-label">Телефон</label>
-                                <input type="tel" class="form-control" id="reg_phone" name="phone" placeholder="+38 (0XX) XXX-XX-XX" required>
+                                <input type="tel" class="form-control" id="reg_phone" name="phone" placeholder="+38 (0XX) XXX-XX-XX" pattern="\+38[0-9]{9,10}" inputmode="tel" title="Формат: +38XXXXXXXXXX" required>
                             </div>
 
                             <div class="mb-3">
@@ -77,12 +80,18 @@ if (isset($_SESSION['success'])) {
 
                             <div class="mb-3">
                                 <label for="reg_password" class="form-label">Пароль</label>
-                                <input type="password" class="form-control" id="reg_password" name="password" minlength="6" required>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="reg_password" name="password" minlength="6" required>
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleRegPassword">Показати</button>
+                                </div>
                             </div>
 
                             <div class="mb-3">
                                 <label for="reg_password_confirm" class="form-label">Підтвердіть пароль</label>
-                                <input type="password" class="form-control" id="reg_password_confirm" name="password_confirm" minlength="6" required>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="reg_password_confirm" name="password_confirm" minlength="6" required>
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleRegPasswordConfirm">Показати</button>
+                                </div>
                             </div>
 
                             <div class="d-grid gap-2">
@@ -132,10 +141,55 @@ if (isset($_SESSION['success'])) {
     registerForm.addEventListener('submit', function(e) {
         const p1 = document.getElementById('reg_password').value;
         const p2 = document.getElementById('reg_password_confirm').value;
+        const phone = document.getElementById('reg_phone').value.trim();
+        const phoneRegex = /^\+38\d{9,10}$/;
+
+        if (!phoneRegex.test(phone)) {
+            e.preventDefault();
+            alert('Неправильний формат телефону. Використовуйте +38XXXXXXXXXX');
+            return false;
+        }
+
         if (p1 !== p2) {
             e.preventDefault();
             alert('Паролі не збігаються');
             return false;
         }
     });
+
+    // Валідація для форми логіну
+    const loginForm = document.querySelector('form[action="../Presenter/auth_actions.php"]');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                const phoneVal = phoneInput.value.trim();
+                const phoneRegex2 = /^\+38\d{9,10}$/;
+                if (!phoneRegex2.test(phoneVal)) {
+                    e.preventDefault();
+                    alert('Неправильний формат телефону. Використовуйте +38XXXXXXXXXX');
+                    return false;
+                }
+            }
+        });
+    }
+
+    function togglePassword(buttonId, inputId) {
+        const btn = document.getElementById(buttonId);
+        const input = document.getElementById(inputId);
+        if (!btn || !input) return;
+        btn.addEventListener('click', function() {
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = 'Спрятати';
+            } else {
+                input.type = 'password';
+                btn.textContent = 'Показати';
+            }
+        });
+    }
+
+    togglePassword('toggleLoginPassword', 'password');
+    togglePassword('toggleRegPassword', 'reg_password');
+    togglePassword('toggleRegPasswordConfirm', 'reg_password_confirm');
 </script>

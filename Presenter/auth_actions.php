@@ -2,6 +2,17 @@
 session_start();
 require __DIR__ . '/../Model/auth.php';
 
+// Нормалізація та валідація номера телефону: допускаємо тільки формат, що починається з +38
+function normalize_and_validate_phone($phone) {
+    $phone = trim($phone);
+    // Видаляємо пробіли, дужки та дефіси, залишаємо цифри та знак +
+    $normalized = preg_replace('/[^0-9+]/', '', $phone);
+    if (!preg_match('/^\+38\d{9,10}$/', $normalized)) {
+        return false;
+    }
+    return $normalized;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../View/auth.php');
     exit;
@@ -23,6 +34,16 @@ if ($action === 'register') {
         exit;
     }
 
+    // Перевірити формат телефону
+    $phone_normalized = normalize_and_validate_phone($phone);
+    if ($phone_normalized === false) {
+        $msg = 'Неправильний формат телефону. Використовуйте +38XXXXXXXXXX';
+        header('Location: ../View/auth.php?tab=register&msg=' . urlencode($msg));
+        exit;
+    }
+
+    $phone = $phone_normalized;
+
     if ($password !== $password_confirm) {
         $msg = 'Паролі не збігаються';
         header('Location: ../View/auth.php?tab=register&msg=' . urlencode($msg));
@@ -37,7 +58,14 @@ if ($action === 'register') {
 
     $result = register_client($full_name, $phone, $email, $password);
     if ($result['success']) {
-        header('Location: ../View/auth.php?tab=login&msg=' . urlencode($result['message']));
+        $client = get_client_by_phone($phone);
+        if ($client) {
+            $_SESSION['client_id'] = $client['id'];
+            $_SESSION['client_name'] = $client['full_name'];
+            header('Location: ../View/index.php?msg=' . urlencode('Реєстрація пройшла успішно. Ви увійшли як ' . $client['full_name']));
+        } else {
+            header('Location: ../View/auth.php?tab=login&msg=' . urlencode($result['message']));
+        }
     } else {
         header('Location: ../View/auth.php?tab=register&msg=' . urlencode($result['message']));
     }
@@ -53,6 +81,15 @@ if ($action === 'login') {
         header('Location: ../View/auth.php?tab=login&msg=' . urlencode($msg));
         exit;
     }
+
+    // Перевірка формату телефону при логіні
+    $phone_normalized = normalize_and_validate_phone($phone);
+    if ($phone_normalized === false) {
+        $msg = 'Неправильний формат телефону. Використовуйте +38XXXXXXXXXX';
+        header('Location: ../View/auth.php?tab=login&msg=' . urlencode($msg));
+        exit;
+    }
+    $phone = $phone_normalized;
 
     $result = login_client_by_phone($phone, $password);
     if ($result['success']) {
@@ -91,6 +128,15 @@ if ($action === 'update_profile') {
         header('Location: ../View/profile.php');
         exit;
     }
+
+    // Перевірка формату телефону при оновленні профілю
+    $phone_normalized = normalize_and_validate_phone($phone);
+    if ($phone_normalized === false) {
+        $_SESSION['error'] = 'Неправильний формат телефону. Використовуйте +38XXXXXXXXXX';
+        header('Location: ../View/profile.php');
+        exit;
+    }
+    $phone = $phone_normalized;
 
     if (empty($current_password)) {
         $_SESSION['error'] = 'Поточний пароль обов\'язковий';

@@ -1,6 +1,10 @@
 <?php
 session_start();
 require __DIR__ . '/../Model/products.php';
+require __DIR__ . '/../Model/auth.php';
+
+// Якщо користувач авторизований, отримаємо його дані для попереднього заповнення форми
+$client = get_current_user_client();
 
 $page_title = 'FAST PIZZA — Кошик';
 require __DIR__ . '/header.php';
@@ -34,7 +38,6 @@ require __DIR__ . '/../Presenter/cart_actions.php';
                           <img src="<?php echo htmlspecialchars($item['img']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">
                         <?php else: ?>
                           <?php if ($isDrinkNoImage): ?>
-                            <!-- intentionally empty for drinks without images -->
                           <?php else: ?>
                             <img src="images/pizza.jpg" alt="<?php echo htmlspecialchars($item['name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">
                           <?php endif; ?>
@@ -68,12 +71,12 @@ require __DIR__ . '/../Presenter/cart_actions.php';
             <form method="POST" action="cart.php" id="orderForm">
               <div class="form-group">
                 <label>Ведіть ваше ім'я</label>
-                <input type="text" name="name" class="form-input" placeholder="Ім'я" required>
+                <input type="text" name="name" class="form-input" placeholder="Ім'я" value="<?php echo htmlspecialchars($client['full_name'] ?? ''); ?>" required>
               </div>
 
               <div class="form-group">
                 <label>Телефон</label>
-                <input type="tel" name="phone" class="form-input" placeholder="+380 __ ___ __ __" required>
+                <input type="tel" name="phone" class="form-input" placeholder="+380 __ ___ __ __" pattern="\+38[0-9]{9,10}" inputmode="tel" title="Формат: +38XXXXXXXXXX" value="<?php echo htmlspecialchars($client['phone'] ?? ''); ?>" required>
               </div>
 
               <div class="form-section">

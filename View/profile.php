@@ -53,7 +53,7 @@ unset($_SESSION['success'], $_SESSION['error']);
                         <div class="mb-3">
                             <label for="phone" class="form-label">Телефон</label>
                             <input type="tel" class="form-control" id="phone" name="phone" 
-                                   value="<?php echo htmlspecialchars($client['phone'] ?? ''); ?>" required>
+                                value="<?php echo htmlspecialchars($client['phone'] ?? ''); ?>" pattern="\+38[0-9]{9,10}" inputmode="tel" title="Формат: +38XXXXXXXXXX" required>
                         </div>
 
                         <div class="mb-3">
@@ -66,21 +66,30 @@ unset($_SESSION['success'], $_SESSION['error']);
 
                         <div class="mb-3">
                             <label for="current_password" class="form-label">Поточний пароль (для збереження змін)</label>
-                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                <button type="button" class="btn btn-outline-secondary" id="toggleCurrentPassword">Показати</button>
+                            </div>
                         </div>
 
                         <h5 class="mt-4 mb-3">Зміна пароля</h5>
 
                         <div class="mb-3">
                             <label for="new_password" class="form-label">Новий пароль (залишити порожнім, щоб не змінювати)</label>
-                            <input type="password" class="form-control" id="new_password" name="new_password" 
-                                   placeholder="Мінімум 6 символів" minlength="6">
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="new_password" name="new_password" 
+                                       placeholder="Мінімум 6 символів" minlength="6">
+                                <button type="button" class="btn btn-outline-secondary" id="toggleNewPassword">Показати</button>
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="new_password_confirm" class="form-label">Підтвердіть новий пароль</label>
-                            <input type="password" class="form-control" id="new_password_confirm" name="new_password_confirm" 
-                                   placeholder="Мінімум 6 символів" minlength="6">
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="new_password_confirm" name="new_password_confirm" 
+                                       placeholder="Мінімум 6 символів" minlength="6">
+                                <button type="button" class="btn btn-outline-secondary" id="toggleNewPasswordConfirm">Показати</button>
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2">
@@ -96,3 +105,25 @@ unset($_SESSION['success'], $_SESSION['error']);
         </div>
     </div>
 </div>
+<script>
+    (function(){
+        function togglePassword(buttonId, inputId) {
+            const btn = document.getElementById(buttonId);
+            const input = document.getElementById(inputId);
+            if (!btn || !input) return;
+            btn.addEventListener('click', function() {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    btn.textContent = 'Спрятати';
+                } else {
+                    input.type = 'password';
+                    btn.textContent = 'Показати';
+                }
+            });
+        }
+
+        togglePassword('toggleCurrentPassword', 'current_password');
+        togglePassword('toggleNewPassword', 'new_password');
+        togglePassword('toggleNewPasswordConfirm', 'new_password_confirm');
+    })();
+</script>
