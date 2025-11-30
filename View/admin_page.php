@@ -29,7 +29,7 @@ $msg = $_GET['msg'] ?? '';
 				<div class="admin-title">Панель адміністратора</div>
 			</div>
 			<div>
-				<a href="menu_php.php" class="btn btn-outline-secondary">Перейти до сайту</a>
+				<a href="menu_page.php" class="btn btn-outline-secondary">Перейти до сайту</a>
 			</div>
 		</div>
 
