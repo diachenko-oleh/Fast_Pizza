@@ -3,7 +3,7 @@ session_start();
 require __DIR__ . '/../Model/admin_products.php';
 
 // Єдине місце, де задається шлях
-$msg_path = 'Location: ../View/edit_products.php';
+$msg_path = 'Location: ../View/admin_edit_page.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header($msg_path);
