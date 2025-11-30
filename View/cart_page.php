@@ -50,16 +50,16 @@ require __DIR__ . '/../Presenter/cart_actions.php';
                     </td>
                     <td class="item-controls">
                       <div class="qty-control">
-                        <button type="button" class="qty-btn minus" data-key="<?php echo urlencode($key); ?>" onclick="changeQty(this, 'dec')">−</button>
+                        <button type="button" class="qty-btn minus" data-key="<?php echo htmlspecialchars($key, ENT_QUOTES); ?>" onclick="changeQty(this, 'dec')">−</button>
                         <input type="text" class="qty-input" value="<?php echo $item['qty']; ?>" readonly>
-                        <button type="button" class="qty-btn plus" data-key="<?php echo urlencode($key); ?>" onclick="changeQty(this, 'inc')">+</button>
+                        <button type="button" class="qty-btn plus" data-key="<?php echo htmlspecialchars($key, ENT_QUOTES); ?>" onclick="changeQty(this, 'inc')">+</button>
                       </div>
                     </td>
                     <td class="item-total">
                       <strong><?php echo $subtotal; ?> грн</strong>
                     </td>
                     <td class="item-remove">
-                      <button type="button" class="remove-btn" data-key="<?php echo urlencode($key); ?>" onclick="removeItem(this)" title="Видалити">✕</button>
+                      <button type="button" class="remove-btn" data-key="<?php echo htmlspecialchars($key, ENT_QUOTES); ?>" onclick="removeItem(this)" title="Видалити">✕</button>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -68,7 +68,7 @@ require __DIR__ . '/../Presenter/cart_actions.php';
           </div>
 
           <div class="order-form">
-            <form method="POST" action="cart.php" id="orderForm">
+            <form method="POST" action="" id="orderForm">
               <div class="form-group">
                 <label>Ведіть ваше ім'я</label>
                 <input type="text" name="name" class="form-input" placeholder="Ім'я" value="<?php echo htmlspecialchars($client['full_name'] ?? ''); ?>" required>
@@ -166,9 +166,18 @@ require __DIR__ . '/../Presenter/cart_actions.php';
         
         saveCartToLocalStorage();
 
-        fetch('cart.php?qty=' + encodeURIComponent(key) + '&action=' + action, {
+        fetch('../Presenter/cart_actions.php?qty=' + encodeURIComponent(key) + '&action=' + action, {
           method: 'GET',
-          credentials: 'same-origin'
+          credentials: 'same-origin',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        })
+        .then(r => r.json())
+        .then(data => {
+          console.log('qty response', data);
+          if (!data.success) console.error('Server error (qty update):', data);
         })
         .catch(err => {
           console.error('Ошибка при синхронизации с сервером:', err);
@@ -190,9 +199,25 @@ require __DIR__ . '/../Presenter/cart_actions.php';
           location.reload();
         }
         
-        fetch('cart.php?remove=' + encodeURIComponent(key), {
+        fetch('../Presenter/cart_actions.php?remove=' + encodeURIComponent(key), {
           method: 'GET',
-          credentials: 'same-origin'
+          credentials: 'same-origin',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        })
+        .then(r => r.json())
+        .then(data => {
+          console.log('remove response', data);
+          if (!data.success) {
+            console.error('Server error (remove):', data);
+            if (row && !document.querySelector('.cart-table tbody').contains(row)) {
+              document.querySelector('.cart-table tbody').appendChild(row);
+              updateTotalPrice();
+              saveCartToLocalStorage();
+            }
+          }
         })
         .catch(err => {
           console.error('Ошибка при синхронизации с сервером:', err);

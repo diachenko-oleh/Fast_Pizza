@@ -1,9 +1,12 @@
 <?php
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-// Обработка изменения количества товара
 if (!empty($_GET['qty'])) {
     $key = $_GET['qty'];
     $action = $_GET['action'] ?? '';
@@ -16,12 +19,13 @@ if (!empty($_GET['qty'])) {
         }
     }
     
-    // Если это AJAX запрос, отправляем JSON и выходим
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => true]);
-        exit;
-    }
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'action' => 'qty',
+        'key' => $key,
+        'cart_keys' => array_keys($_SESSION['cart'])
+    ]);
     exit;
 }
 
@@ -30,8 +34,23 @@ if (!empty($_GET['remove'])) {
     if (isset($_SESSION['cart'][$rem])) {
         unset($_SESSION['cart'][$rem]);
     }
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'action' => 'remove',
+        'removed' => $rem,
+        'cart_keys' => array_keys($_SESSION['cart'])
+    ]);
+    exit;
 }
 
 if (!empty($_GET['clear'])) {
     $_SESSION['cart'] = [];
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'action' => 'clear',
+        'cart_keys' => array_keys($_SESSION['cart'])
+    ]);
+    exit;
 }
