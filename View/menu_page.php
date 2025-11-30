@@ -92,7 +92,7 @@ function addToCart(button) {
     formData.append('price', price);
     if (img) formData.append('img', img);
 
-    fetch('../Presenter/index_actions.php', {
+    fetch('../Presenter/menu_actions.php', {
     method: 'POST',
     body: formData
     })
