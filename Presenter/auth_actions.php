@@ -30,7 +30,7 @@ if ($action === 'register') {
     // Валідація
     if (empty($full_name) || empty($phone) || empty($password)) {
         $msg = 'Заповніть обов\'язкові поля (ім\'я, телефон, пароль)';
-        header('Location: ../View/auth.php?tab=register&msg=' . urlencode($msg));
+        header('Location: ../View/auth_page.php?tab=register&msg=' . urlencode($msg));
         exit;
     }
 
@@ -38,7 +38,7 @@ if ($action === 'register') {
     $phone_normalized = normalize_and_validate_phone($phone);
     if ($phone_normalized === false) {
         $msg = 'Неправильний формат телефону. Використовуйте +38XXXXXXXXXX';
-        header('Location: ../View/auth.php?tab=register&msg=' . urlencode($msg));
+        header('Location: ../View/auth_page.php?tab=register&msg=' . urlencode($msg));
         exit;
     }
 
@@ -46,13 +46,13 @@ if ($action === 'register') {
 
     if ($password !== $password_confirm) {
         $msg = 'Паролі не збігаються';
-        header('Location: ../View/auth.php?tab=register&msg=' . urlencode($msg));
+        header('Location: ../View/auth_page.php?tab=register&msg=' . urlencode($msg));
         exit;
     }
 
     if (strlen($password) < 6) {
         $msg = 'Пароль повинен мати не менше 6 символів';
-        header('Location: ../View/auth.php?tab=register&msg=' . urlencode($msg));
+        header('Location: ../View/auth_page.php?tab=register&msg=' . urlencode($msg));
         exit;
     }
 
@@ -62,12 +62,12 @@ if ($action === 'register') {
         if ($client) {
             $_SESSION['client_id'] = $client['id'];
             $_SESSION['client_name'] = $client['full_name'];
-            header('Location: ../View/index.php?msg=' . urlencode('Реєстрація пройшла успішно. Ви увійшли як ' . $client['full_name']));
+            header('Location: ../View/menu_page.php?msg=' . urlencode('Реєстрація пройшла успішно. Ви увійшли як ' . $client['full_name']));
         } else {
-            header('Location: ../View/auth.php?tab=login&msg=' . urlencode($result['message']));
+            header('Location: ../View/auth_page.php?tab=login&msg=' . urlencode($result['message']));
         }
     } else {
-        header('Location: ../View/auth.php?tab=register&msg=' . urlencode($result['message']));
+        header('Location: ../View/auth_page.php?tab=register&msg=' . urlencode($result['message']));
     }
     exit;
 }
@@ -78,7 +78,7 @@ if ($action === 'login') {
 
     if (empty($phone) || empty($password)) {
         $msg = 'Заповніть телефон та пароль';
-        header('Location: ../View/auth.php?tab=login&msg=' . urlencode($msg));
+        header('Location: ../View/auth_page.php?tab=login&msg=' . urlencode($msg));
         exit;
     }
 
@@ -86,7 +86,7 @@ if ($action === 'login') {
     $phone_normalized = normalize_and_validate_phone($phone);
     if ($phone_normalized === false) {
         $msg = 'Неправильний формат телефону. Використовуйте +38XXXXXXXXXX';
-        header('Location: ../View/auth.php?tab=login&msg=' . urlencode($msg));
+        header('Location: ../View/auth_page.php?tab=login&msg=' . urlencode($msg));
         exit;
     }
     $phone = $phone_normalized;
@@ -95,23 +95,23 @@ if ($action === 'login') {
     if ($result['success']) {
         $_SESSION['client_id'] = $result['client']['id'];
         $_SESSION['client_name'] = $result['client']['full_name'];
-        header('Location: ../View/index.php?msg=Ви+успішно+увійшли');
+        header('Location: ../View/menu_page.php?msg=Ви+успішно+увійшли');
     } else {
-        header('Location: ../View/auth.php?tab=login&msg=' . urlencode($result['message']));
+        header('Location: ../View/auth_page.php?tab=login&msg=' . urlencode($result['message']));
     }
     exit;
 }
 
 if ($action === 'logout') {
     logout_client();
-    header('Location: ../View/index.php?msg=Ви+вийшли');
+    header('Location: ../View/menu_page.php?msg=Ви+вийшли');
     exit;
 }
 
 if ($action === 'update_profile') {
     $client = get_current_user_client();
     if (!$client) {
-        header('Location: ../View/auth.php');
+        header('Location: ../View/auth_page.php');
         exit;
     }
 
@@ -125,7 +125,7 @@ if ($action === 'update_profile') {
     // Валідація
     if (empty($full_name) || empty($phone)) {
         $_SESSION['error'] = 'Ім\'я та телефон обов\'язкові';
-        header('Location: ../View/profile.php');
+        header('Location: ../View/profile_page.php');
         exit;
     }
 
@@ -133,32 +133,32 @@ if ($action === 'update_profile') {
     $phone_normalized = normalize_and_validate_phone($phone);
     if ($phone_normalized === false) {
         $_SESSION['error'] = 'Неправильний формат телефону. Використовуйте +38XXXXXXXXXX';
-        header('Location: ../View/profile.php');
+        header('Location: ../View/profile_page.php');
         exit;
     }
     $phone = $phone_normalized;
 
     if (empty($current_password)) {
         $_SESSION['error'] = 'Поточний пароль обов\'язковий';
-        header('Location: ../View/profile.php');
+        header('Location: ../View/profile_page.php');
         exit;
     }
 
     if (!password_verify($current_password, $client['password_hash'])) {
         $_SESSION['error'] = 'Неправильний поточний пароль';
-        header('Location: ../View/profile.php');
+        header('Location: ../View/profile_page.php');
         exit;
     }
 
     if ($new_password && strlen($new_password) < 6) {
         $_SESSION['error'] = 'Новий пароль повинен містити мінімум 6 символів';
-        header('Location: ../View/profile.php');
+        header('Location: ../View/profile_page.php');
         exit;
     }
 
     if ($new_password && $new_password !== $new_password_confirm) {
         $_SESSION['error'] = 'Паролі не збігаються';
-        header('Location: ../View/profile.php');
+        header('Location: ../View/profile_page.php');
         exit;
     }
 
@@ -182,9 +182,9 @@ if ($action === 'update_profile') {
         $_SESSION['error'] = 'Помилка при оновленні профілю: ' . $e->getMessage();
     }
     
-    header('Location: ../View/profile.php');
+    header('Location: ../View/profile_page.php');
     exit;
 }
 
-header('Location: ../View/auth.php');
+header('Location: ../View/auth_page.php');
 exit;
