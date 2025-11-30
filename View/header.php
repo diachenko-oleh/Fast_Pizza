@@ -47,21 +47,26 @@ if (!isset($_SESSION)) {
 				<?php else: ?>
 					<a class="btn btn-primary" href="auth.php">Увійти</a>
 				<?php endif; ?>
-			</div>
-			
-			<a href="cart.php" class="floating-cart-btn">
-    			Кошик
-			</a>
+		</div>
+		
+		<?php 
+			$visible_pages = ['index.php', 'deliverypage.php', 'infopage.php'];
 
-		<script>
-			document.addEventListener("scroll", () => {
-    			const btn = document.querySelector(".floating-cart-btn");
+			if (in_array(basename($_SERVER['PHP_SELF']), $visible_pages)): ?>
+    			<a href="cart.php" class="floating-cart-btn">
+      			  	Кошик
+   				</a>
+		<?php endif; ?>
+		
+	<script>
+		document.addEventListener("scroll", () => {
+    		const btn = document.querySelector(".floating-cart-btn");
 
-    			if (window.scrollY > 150) {
-        			btn.classList.add("show");
-    			} else {
-        			btn.classList.remove("show");
-   				}
-			});
-		</script>
-	</nav>
+   		 if (window.scrollY > 150) {
+        	btn.classList.add("show");
+    	} else {
+       		btn.classList.remove("show");
+    	}
+	});
+	</script>
+</nav>

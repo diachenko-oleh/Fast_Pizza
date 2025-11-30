@@ -97,8 +97,12 @@ unset($_SESSION['success'], $_SESSION['error']);
                         </div>
                     </form>
 
-                    <div class="mt-3">
+                    <div class="mt-3 d-flex gap-2 align-items-center">
                         <a href="index.php" class="text-decoration-none">← Повернутися на головну</a>
+                        <form method="POST" action="../Presenter/auth_actions.php" style="margin-left: auto; margin-bottom: 0;">
+                            <input type="hidden" name="action" value="logout">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Вийти з акаунту</button>
+                        </form>
                     </div>
                 </div>
             </div>
