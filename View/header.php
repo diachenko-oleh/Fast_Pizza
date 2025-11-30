@@ -16,15 +16,15 @@ if (!isset($_SESSION)) {
 		<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom position-relative">
 			<div class="container d-flex justify-content-center align-items-center">
 				<ul class="navbar-nav d-flex flex-row align-items-center me-2">
-					<li class="nav-item"><a class="nav-link px-2 <?php echo $currentPage === 'menu_page.php' ? 'active' : ''; ?>" href="index.php">Меню</a></li>
-					<li class="nav-item"><a class="nav-link px-2 <?php echo $currentPage === 'info_page.php' ? 'active' : ''; ?>" href="infopage.php">Інформація</a></li>
+					<li class="nav-item"><a class="nav-link px-2 <?php echo $currentPage === 'menu_page.php' ? 'active' : ''; ?>" href="menu_page.php">Меню</a></li>
+					<li class="nav-item"><a class="nav-link px-2 <?php echo $currentPage === 'info_page.php' ? 'active' : ''; ?>" href="info_page.php">Інформація</a></li>
 				</ul>
 
-				<a class="navbar-brand mx-3 fs-4 fw-bold" href="index.php">FAST PIZZA</a>
+				<a class="navbar-brand mx-3 fs-4 fw-bold" href="menu_page.php">FAST PIZZA</a>
 
 				<ul class="navbar-nav d-flex flex-row align-items-center ms-2">
-					<li class="nav-item"><a class="nav-link px-2 <?php echo $currentPage === 'delivery_page.php' ? 'active' : ''; ?>" href="deliverypage.php">Доставка</a></li>
-					<li class="nav-item"><a class="btn btn-outline-dark ms-2 <?php echo $currentPage === 'cart_page.php' ? 'active' : ''; ?>" href="cart.php">Кошик</a></li>
+					<li class="nav-item"><a class="nav-link px-2 <?php echo $currentPage === 'delivery_page.php' ? 'active' : ''; ?>" href="delivery_page.php">Доставка</a></li>
+					<li class="nav-item"><a class="btn btn-outline-dark ms-2 <?php echo $currentPage === 'cart_page.php' ? 'active' : ''; ?>" href="cart_page.php">Кошик</a></li>
 				</ul>
 			</div>
 
@@ -46,15 +46,15 @@ if (!isset($_SESSION)) {
 						</ul>
 					</div>
 				<?php else: ?>
-					<a class="btn btn-primary <?php echo $currentPage === 'auth.php' ? 'active' : ''; ?>" href="auth_page.php">Увійти</a>
+					<a class="btn btn-primary <?php echo $currentPage === 'auth_page.php' ? 'active' : ''; ?>" href="auth_page.php">Увійти</a>
 				<?php endif; ?>
 		</div>
 		
 		<?php 
-$visible_pages = ['index.php', 'deliverypage.php', 'infopage.php'];
+$visible_pages = ['menu_page.php', 'delivery_page.php', 'info_page.php'];
 
 if (in_array(basename($_SERVER['PHP_SELF']), $visible_pages)): ?>
-    <a href="cart.php" class="floating-cart-btn">
+    <a href="cart_page.php" class="floating-cart-btn">
         Кошик
     </a>
 <?php endif; ?>
