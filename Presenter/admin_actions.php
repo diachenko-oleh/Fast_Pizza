@@ -3,7 +3,7 @@ session_start();
 require __DIR__ . '/../Model/admin_products.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../View/adminpage.php');
+    header('Location: ../View/edit_products.php');
     exit;
 }
 
@@ -18,7 +18,7 @@ if (!empty($_POST['delete_id'])) {
         $msg = 'Невірний id для видалення';
     }
 
-    header('Location: ../View/adminpage.php?msg=' . urlencode($msg));
+    header('Location: ../View/edit_products.php?msg=' . urlencode($msg));
     exit;
 }
 
@@ -51,7 +51,7 @@ if ($action === 'bulk_update') {
         $msg = $ok ? 'Всі зміни збережені' : 'Помилка при збереженні';
     }
 
-    header('Location: ../View/adminpage.php?msg=' . urlencode($msg));
+    header('Location: ../View/edit_products.php?msg=' . urlencode($msg));
     exit;
 }
 
@@ -67,9 +67,9 @@ if ($action === 'create') {
         $msg = 'Товар додано: ' . htmlspecialchars($name);
     }
 
-    header('Location: ../View/adminpage.php?msg=' . urlencode($msg));
+    header('Location: ../View/edit_products.php?msg=' . urlencode($msg));
     exit;
 }
 
-header('Location: ../View/adminpage.php');
+header('Location: ../View/edit_products.php');
 exit;
