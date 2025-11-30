@@ -2,8 +2,11 @@
 session_start();
 require __DIR__ . '/../Model/admin_products.php';
 
+// Єдине місце, де задається шлях
+$msg_path = 'Location: ../View/edit_products.php';
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../View/edit_products.php');
+    header($msg_path);
     exit;
 }
 
@@ -18,7 +21,7 @@ if (!empty($_POST['delete_id'])) {
         $msg = 'Невірний id для видалення';
     }
 
-    header('Location: ../View/edit_products.php?msg=' . urlencode($msg));
+    header($msg_path . '?msg=' . urlencode($msg));
     exit;
 }
 
@@ -51,7 +54,7 @@ if ($action === 'bulk_update') {
         $msg = $ok ? 'Всі зміни збережені' : 'Помилка при збереженні';
     }
 
-    header('Location: ../View/edit_products.php?msg=' . urlencode($msg));
+    header($msg_path . '?msg=' . urlencode($msg));
     exit;
 }
 
@@ -61,15 +64,14 @@ if ($action === 'create') {
     $isPizza = isset($_POST['isPizza']) ? 1 : 0;
 
     $newId = create_product($name, $price, $isPizza);
-    if ($newId === false) {
-    $msg = 'Помилка при створенні товару';
-    } else {
-        $msg = 'Товар додано: ' . htmlspecialchars($name);
-    }
+    
+    $msg = $newId === false
+        ? 'Помилка при створенні товару'
+        : 'Товар додано: ' . htmlspecialchars($name);
 
-    header('Location: ../View/edit_products.php?msg=' . urlencode($msg));
+    header($msg_path . '?msg=' . urlencode($msg));
     exit;
 }
 
-header('Location: ../View/edit_products.php');
+header($msg_path);
 exit;
