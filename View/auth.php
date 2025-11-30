@@ -181,7 +181,7 @@ if (isset($_SESSION['success'])) {
         btn.addEventListener('click', function() {
             if (input.type === 'password') {
                 input.type = 'text';
-                btn.textContent = 'Спрятати';
+                btn.textContent = 'Сховати';
             } else {
                 input.type = 'password';
                 btn.textContent = 'Показати';
