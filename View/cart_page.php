@@ -17,7 +17,7 @@ require __DIR__ . '/../Presenter/cart_actions.php';
 
       <?php if (empty($_SESSION['cart'])): ?>
         <div class="empty-cart">
-          <p>Кошик порожній. Поверніться до <a href="index.php">меню</a>, щоб додати товари.</p>
+          <p>Кошик порожній. Поверніться до <a href="menu_page.php">меню</a>, щоб додати товари.</p>
         </div>
       <?php else: ?>
         <div class="cart-content">
