@@ -35,7 +35,7 @@ if (!isset($_SESSION)) {
 							👤 <?php echo htmlspecialchars($_SESSION['client_name'] ?? 'User'); ?>
 						</a>
 						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownCorner">
-							<li><a class="dropdown-item" href="profile.php">Мій профіль</a></li>
+							<li><a class="dropdown-item" href="profile_page.php">Мій профіль</a></li>
 							<li><hr class="dropdown-divider"></li>
 							<li>
 								<form method="POST" action="../Presenter/auth_actions.php" style="margin: 0;">
