@@ -125,9 +125,9 @@ require __DIR__ . '/../Presenter/cart_actions.php';
               <div class="form-group" id="selfPickupSection" style="display: none;">
                 <label for="addressSelect" class="form-label">Оберіть адресу закладу:</label>
                 <select id="addressSelect" name="address" class="form-control" required>
-                  <option value="Шевченка 60">Шевченка 60</option>
-                  <option value="Шевченка 100">Шевченка 100</option>
-                  <option value="Шевченка 200">Шевченка 200</option>
+                  <option value="бульвар Шевченка, 60, Черкаси">бульвар Шевченка, 60, Черкаси</option>
+                  <option value="бульвар Шевченка, 150, Черкаси">бульвар Шевченка, 150, Черкаси</option>
+                  <option value="бульвар Шевченка, 210, Черкаси">бульвар Шевченка, 210, Черкаси</option>
                 </select>
               </div>
 
@@ -199,8 +199,14 @@ require __DIR__ . '/../Presenter/cart_actions.php';
       <?php endif; ?>
     </main>
 
+<style>
+/* Фікс для автозаполнения Google Places внутри модального окна */
+.pac-container {
+  z-index: 9999 !important;
+}
+</style>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDe3iJJ1yjlG_VbcjmNpy32wDH6rMteJ0&libraries=places&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDe3iJJ1yjlG_VbcjmNpy32wDH6rMteJ0&libraries=places&language=uk&region=UA&callback=initMap" async defer></script>
 
 <script>
 let map, marker, selectedAddress = "";
@@ -259,43 +265,6 @@ document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
   }
 });
 
-
-//автозаполнение
-function positionPacContainer() {
-    const pac = document.querySelector(".pac-container");
-    const input = document.getElementById("addressInput");
-
-    if (!pac || !input) return;
-
-    // Переносим pac внутрь модалки
-    const modalBody = document.querySelector("#mapModal .modal-body");
-    if (pac.parentNode !== modalBody) {
-        modalBody.appendChild(pac);
-    }
-
-    // Получаем позицию input внутри модалки
-    const rect = input.getBoundingClientRect();
-    const modalRect = modalBody.getBoundingClientRect();
-
-    pac.style.position = "absolute";
-    pac.style.zIndex = 99999;
-    pac.style.width = input.offsetWidth + "px";
-
-    pac.style.left = (rect.left - modalRect.left) + "px";
-    pac.style.top = (rect.bottom - modalRect.top) + "px";
-}
-
-// Перепозиционировать при каждом вводе текста
-addressInput.addEventListener("input", () => {
-    setTimeout(positionPacContainer, 10);
-});
-
-// И при каждом событии place_changed
-autocomplete.addListener("place_changed", () => {
-    setTimeout(positionPacContainer, 10);
-});
-
-
 /* --- Функція для встановлення позиції маркера та отримання адреси --- */
 function setPositionFromCoords(latlng) {
   marker.setPosition(latlng);
@@ -353,8 +322,12 @@ document.getElementById("confirmAddressBtn").addEventListener("click", () => {
   document.getElementById("deliveryAddress").value = selectedAddress;
   document.getElementById("selectedAddressDisplay").textContent = selectedAddress;
 
-  const modal = bootstrap.Modal.getInstance(document.getElementById("mapModal"));
-  modal.hide();
+  // ВИПРАВЛЕННЯ: правильне закриття модального вікна
+  const modalElement = document.getElementById("mapModal");
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  if (modal) {
+    modal.hide();
+  }
 });
 
 /* --- Фікс карти при відкритті модального --- */
