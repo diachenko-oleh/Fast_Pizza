@@ -132,12 +132,56 @@ require __DIR__ . '/../Presenter/cart_actions.php';
               </div>
 
               <!-- Доставка: кнопка для відкриття модального вікна з картою -->
-              <div class="form-group" id="deliverySection" style="display: none;">
-                <label class="form-label">Виберіть адресу доставки:</label>
-                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">Відкрити карту</button>
-                <input type="hidden" id="deliveryAddress" name="address" value="" required>
-                <div id="selectedAddressDisplay" style="margin-top: 10px; font-weight: bold; color: #666;"></div>
-              </div>
+<div class="form-group" id="deliverySection" style="display: none;">
+  <label class="form-label">Виберіть адресу доставки:</label>
+
+  <!-- кнопка -->
+  <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">
+    Відкрити карту
+  </button>
+
+  <!-- тут буде збережено адресу -->
+  <input type="hidden" id="deliveryAddress" name="address" required>
+
+  <!-- показ обраної адреси -->
+  <div id="selectedAddressDisplay" style="margin-top: 10px; font-weight: bold; color: #666;"></div>
+</div>
+
+
+<!-- Модальне вікно з картою -->
+<div class="modal fade" id="mapModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Виберіть місце на карті</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input id="addressInput" 
+               type="text" 
+               class="form-control mb-3" 
+               placeholder="Введіть адресу українською">
+
+
+        <div id="map" style="width: 100%; height: 400px;"></div>
+
+        <div id="mapInfo" class="mt-2" style="font-size: 16px;">
+          Вибране місце: ще не вибрано
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="confirmAddressBtn" class="btn btn-primary" disabled>
+          Підтвердити адресу
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
               <div class="form-group comments">
                 <label>Коментарій:</label>
@@ -154,6 +198,176 @@ require __DIR__ . '/../Presenter/cart_actions.php';
         </div>
       <?php endif; ?>
     </main>
+
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDe3iJJ1yjlG_VbcjmNpy32wDH6rMteJ0&libraries=places&callback=initMap" async defer></script>
+
+<script>
+let map, marker, selectedAddress = "";
+let autocomplete = null;
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 49.44499, lng: 32.06057 },
+    zoom: 15,
+    disableDefaultUI: true
+  });
+
+  marker = new google.maps.Marker({
+    map,
+    draggable: true
+  });
+
+  const info = document.getElementById("mapInfo");
+  const confirmBtn = document.getElementById("confirmAddressBtn");
+
+  map.addListener("click", (e) => setPositionFromCoords(e.latLng, info, confirmBtn));
+
+  marker.addListener("dragend", () => {
+    const pos = marker.getPosition();
+    setPositionFromCoords(pos, info, confirmBtn);
+  });
+}
+
+document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
+  const input = document.getElementById("addressInput");
+  const info = document.getElementById("mapInfo");
+  const confirmBtn = document.getElementById("confirmAddressBtn");
+
+  // Нужно для корректного отображения карты
+  setTimeout(() => google.maps.event.trigger(map, "resize"), 100);
+
+  // Автокомплит создаётся только 1 раз
+  if (!autocomplete) {
+    autocomplete = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: "ua" },
+      fields: ["formatted_address", "geometry", "address_components"]
+    });
+
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (!place.geometry) return;
+
+      map.setCenter(place.geometry.location);
+      map.setZoom(16);
+      marker.setPosition(place.geometry.location);
+
+      selectedAddress = extractUkrainianAddress(place);
+      info.textContent = `Вибране місце: ${selectedAddress}`;
+      confirmBtn.disabled = false;
+    });
+  }
+});
+
+
+//автозаполнение
+function positionPacContainer() {
+    const pac = document.querySelector(".pac-container");
+    const input = document.getElementById("addressInput");
+
+    if (!pac || !input) return;
+
+    // Переносим pac внутрь модалки
+    const modalBody = document.querySelector("#mapModal .modal-body");
+    if (pac.parentNode !== modalBody) {
+        modalBody.appendChild(pac);
+    }
+
+    // Получаем позицию input внутри модалки
+    const rect = input.getBoundingClientRect();
+    const modalRect = modalBody.getBoundingClientRect();
+
+    pac.style.position = "absolute";
+    pac.style.zIndex = 99999;
+    pac.style.width = input.offsetWidth + "px";
+
+    pac.style.left = (rect.left - modalRect.left) + "px";
+    pac.style.top = (rect.bottom - modalRect.top) + "px";
+}
+
+// Перепозиционировать при каждом вводе текста
+addressInput.addEventListener("input", () => {
+    setTimeout(positionPacContainer, 10);
+});
+
+// И при каждом событии place_changed
+autocomplete.addListener("place_changed", () => {
+    setTimeout(positionPacContainer, 10);
+});
+
+
+/* --- Функція для встановлення позиції маркера та отримання адреси --- */
+function setPositionFromCoords(latlng) {
+  marker.setPosition(latlng);
+
+  const geocoder = new google.maps.Geocoder();
+  const info = document.getElementById("mapInfo");
+  const confirmBtn = document.getElementById("confirmAddressBtn");
+
+  geocoder.geocode({ location: latlng, region: "UA", language: "uk" }, (results, status) => {
+    if (status === "OK" && results[0]) {
+      selectedAddress = extractUkrainianAddress(results[0]);
+      info.textContent = `Вибране місце: ${selectedAddress}`;
+      confirmBtn.disabled = false;
+    } else {
+      selectedAddress = "";
+      info.textContent = "Не вдалося визначити адресу";
+      confirmBtn.disabled = true;
+    }
+  });
+}
+
+/* --- Функція для українізації адреси --- */
+function extractUkrainianAddress(place) {
+  if (!place.address_components) return place.formatted_address;
+
+  let street = "";
+  let number = "";
+  let city = "";
+  let district = "";
+  let region = "";
+
+  for (const comp of place.address_components) {
+    if (comp.types.includes("route")) street = comp.long_name;
+    if (comp.types.includes("street_number")) number = comp.long_name;
+    if (comp.types.includes("locality")) city = comp.long_name;
+    if (comp.types.includes("administrative_area_level_2")) district = comp.long_name;
+    if (comp.types.includes("administrative_area_level_1")) region = comp.long_name;
+  }
+
+  let address = "";
+
+  if (street) address += street;
+  if (number) address += ", " + number;
+  if (city) address += ", " + city;
+  if (district && !address.includes(district)) address += ", " + district;
+  if (region && !address.includes(region)) address += ", " + region;
+
+  return address.trim();
+}
+
+/* --- Підтвердження вибору адреси --- */
+document.getElementById("confirmAddressBtn").addEventListener("click", () => {
+  if (!selectedAddress) return;
+
+  document.getElementById("deliveryAddress").value = selectedAddress;
+  document.getElementById("selectedAddressDisplay").textContent = selectedAddress;
+
+  const modal = bootstrap.Modal.getInstance(document.getElementById("mapModal"));
+  modal.hide();
+});
+
+/* --- Фікс карти при відкритті модального --- */
+document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
+  setTimeout(() => {
+    google.maps.event.trigger(map, "resize");
+    map.setCenter({ lat: 49.44499, lng: 32.06057 });
+  }, 200);
+});
+</script>
+
+
+
 
     <script>
       function changeQty(btn, action) {
@@ -329,30 +543,5 @@ require __DIR__ . '/../Presenter/cart_actions.php';
         }
       });
     </script>
-
-    <!-- Модальне вікно для вибору адреси на карті -->
-    <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="mapModalLabel">Виберіть адресу доставки</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <!-- Карта буде розташована тут -->
-            <div id="mapContainer" style="width: 100%; height: 400px; background-color: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 16px;">
-              Карта буде додана тут
-            </div>
-          </div>
-          <div class="modal-footer">
-            <div id="modalAddressDisplay" style="flex: 1; font-weight: bold; color: #333; padding: 8px 0;">
-              Адреса не вибрана
-            </div>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="alert('Будь ласка, оберіть адресу на карті')">Вибрати адресу</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <?php require __DIR__ . '/footer.php'; ?>
