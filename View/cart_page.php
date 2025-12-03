@@ -111,19 +111,32 @@ require __DIR__ . '/../Presenter/cart_actions.php';
                 <label class="form-label">Спосіб отримання замовлення:</label>
                 <div class="radio-group">
                   <label class="radio-label">
-                    <input type="radio" name="delivery_method" value="self" required>
+                    <input type="radio" name="delivery_method" value="self" required onchange="toggleDeliveryUI()">
                     <span>самовивіз</span>
                   </label>
                   <label class="radio-label">
-                    <input type="radio" name="delivery_method" value="delivery" required>
+                    <input type="radio" name="delivery_method" value="delivery" required onchange="toggleDeliveryUI()">
                     <span>доставка</span>
                   </label>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label>Адреса закладу:</label>
-                <input type="text" name="address" class="form-input" placeholder="оберіть закладу" required>
+              <!-- Самовивіз: вибір адреси з списку -->
+              <div class="form-group" id="selfPickupSection" style="display: none;">
+                <label for="addressSelect" class="form-label">Оберіть адресу закладу:</label>
+                <select id="addressSelect" name="address" class="form-control" required>
+                  <option value="Шевченка 60">Шевченка 60</option>
+                  <option value="Шевченка 100">Шевченка 100</option>
+                  <option value="Шевченка 200">Шевченка 200</option>
+                </select>
+              </div>
+
+              <!-- Доставка: кнопка для відкриття модального вікна з картою -->
+              <div class="form-group" id="deliverySection" style="display: none;">
+                <label class="form-label">Виберіть адресу доставки:</label>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">Відкрити карту</button>
+                <input type="hidden" id="deliveryAddress" name="address" value="" required>
+                <div id="selectedAddressDisplay" style="margin-top: 10px; font-weight: bold; color: #666;"></div>
               </div>
 
               <div class="form-group comments">
@@ -252,11 +265,39 @@ require __DIR__ . '/../Presenter/cart_actions.php';
         localStorage.setItem('cart', JSON.stringify(cart));
       }
 
+      function toggleDeliveryUI() {
+        const method = document.querySelector('input[name="delivery_method"]:checked')?.value;
+        const selfPickupSection = document.getElementById('selfPickupSection');
+        const deliverySection = document.getElementById('deliverySection');
+        const addressSelect = document.getElementById('addressSelect');
+        const deliveryAddress = document.getElementById('deliveryAddress');
+
+        if (method === 'self') {
+          selfPickupSection.style.display = 'block';
+          deliverySection.style.display = 'none';
+          addressSelect.required = true;
+          deliveryAddress.required = false;
+        } else if (method === 'delivery') {
+          selfPickupSection.style.display = 'none';
+          deliverySection.style.display = 'block';
+          addressSelect.required = false;
+          deliveryAddress.required = true;
+        }
+      }
+
+      // Set address from map modal (called from map selection)
+      function setDeliveryAddress(address) {
+        document.getElementById('deliveryAddress').value = address;
+        document.getElementById('selectedAddressDisplay').textContent = 'Адреса: ' + address;
+        document.getElementById('modalAddressDisplay').textContent = 'Вибрана адреса: ' + address;
+      }
+
       document.getElementById('orderForm')?.addEventListener('submit', function(e) {
         const name = document.querySelector('input[name="name"]').value.trim();
         const payment = document.querySelector('input[name="payment"]:checked');
         const deliveryTime = document.querySelector('input[name="delivery_time"]:checked');
         const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+        const method = deliveryMethod?.value;
         
         if (!name) {
           e.preventDefault();
@@ -269,7 +310,49 @@ require __DIR__ . '/../Presenter/cart_actions.php';
           alert('Будь ласка, виберіть всі обов\'язкові пункти');
           return false;
         }
+
+        // Ensure address is selected based on delivery method
+        if (method === 'self') {
+          const addressSelect = document.getElementById('addressSelect');
+          if (!addressSelect.value) {
+            e.preventDefault();
+            alert('Будь ласка, оберіть адресу закладу');
+            return false;
+          }
+        } else if (method === 'delivery') {
+          const deliveryAddress = document.getElementById('deliveryAddress');
+          if (!deliveryAddress.value) {
+            e.preventDefault();
+            alert('Будь ласка, оберіть адресу доставки на карті');
+            return false;
+          }
+        }
       });
     </script>
+
+    <!-- Модальне вікно для вибору адреси на карті -->
+    <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="mapModalLabel">Виберіть адресу доставки</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Карта буде розташована тут -->
+            <div id="mapContainer" style="width: 100%; height: 400px; background-color: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 16px;">
+              Карта буде додана тут
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div id="modalAddressDisplay" style="flex: 1; font-weight: bold; color: #333; padding: 8px 0;">
+              Адреса не вибрана
+            </div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="alert('Будь ласка, оберіть адресу на карті')">Вибрати адресу</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <?php require __DIR__ . '/footer.php'; ?>
