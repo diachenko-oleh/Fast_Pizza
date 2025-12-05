@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 require __DIR__ . '/../Model/products.php';
 require __DIR__ . '/../Model/auth.php';
@@ -121,7 +122,6 @@ require __DIR__ . '/../Presenter/cart_actions.php';
                 </div>
               </div>
 
-              <!-- Самовивіз: вибір адреси з списку -->
               <div class="form-group" id="selfPickupSection" style="display: none;">
                 <label for="addressSelect" class="form-label">Оберіть адресу закладу:</label>
                 <select id="addressSelect" name="address" class="form-control" required>
@@ -132,56 +132,52 @@ require __DIR__ . '/../Presenter/cart_actions.php';
               </div>
 
               <!-- Доставка: кнопка для відкриття модального вікна з картою -->
-<div class="form-group" id="deliverySection" style="display: none;">
-  <label class="form-label">Виберіть адресу доставки:</label>
+              <div class="form-group" id="deliverySection" style="display: none;">
+                <label class="form-label">Виберіть адресу доставки:</label>
 
-  <!-- кнопка -->
-  <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">
-    Відкрити карту
-  </button>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">
+                  Відкрити карту
+                </button>
 
-  <!-- тут буде збережено адресу -->
-  <input type="hidden" id="deliveryAddress" name="address" required>
+                <!-- тут буде збережено адресу -->
+                <input type="hidden" id="deliveryAddress" name="address" required>
 
-  <!-- показ обраної адреси -->
-  <div id="selectedAddressDisplay" style="margin-top: 10px; font-weight: bold; color: #666;"></div>
-</div>
+                <!-- показ обраної адреси -->
+                <div id="selectedAddressDisplay" style="margin-top: 10px; font-weight: bold; color: #666;"></div>
+              </div>
 
+              <!-- Модальне вікно з картою -->
+              <div class="modal fade" id="mapModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                  <div class="modal-content">
 
-<!-- Модальне вікно з картою -->
-<div class="modal fade" id="mapModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Виберіть місце на карті</h5>
+                      <button class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
 
-      <div class="modal-header">
-        <h5 class="modal-title">Виберіть місце на карті</h5>
-        <button class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
+                    <div class="modal-body">
+                      <input id="addressInput" 
+                             type="text" 
+                             class="form-control mb-3" 
+                             placeholder="Введіть адресу українською">
 
-      <div class="modal-body">
-        <input id="addressInput" 
-               type="text" 
-               class="form-control mb-3" 
-               placeholder="Введіть адресу українською">
+                      <div id="map" style="width: 100%; height: 400px;"></div>
 
+                      <div id="mapInfo" class="mt-2" style="font-size: 16px;">
+                        Вибране місце: ще не вибрано
+                      </div>
+                    </div>
 
-        <div id="map" style="width: 100%; height: 400px;"></div>
+                    <div class="modal-footer">
+                      <button id="confirmAddressBtn" class="btn btn-primary" disabled>
+                        Підтвердити адресу
+                      </button>
+                    </div>
 
-        <div id="mapInfo" class="mt-2" style="font-size: 16px;">
-          Вибране місце: ще не вибрано
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button id="confirmAddressBtn" class="btn btn-primary" disabled>
-          Підтвердити адресу
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
+                  </div>
+                </div>
+              </div>
 
               <div class="form-group comments">
                 <label>Коментарій:</label>
@@ -200,7 +196,6 @@ require __DIR__ . '/../Presenter/cart_actions.php';
     </main>
 
 <style>
-/* Фікс для автозаполнения Google Places внутри модального окна */
 .pac-container {
   z-index: 9999 !important;
 }
@@ -212,6 +207,7 @@ require __DIR__ . '/../Presenter/cart_actions.php';
 let map, marker, selectedAddress = "";
 let autocomplete = null;
 
+// ІНІЦІАЛІЗАЦІЯ GOOGLE MAPS
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     center: { lat: 49.44499, lng: 32.06057 },
@@ -219,6 +215,7 @@ function initMap() {
     disableDefaultUI: true
   });
 
+  // Створення маркера, який можна перетягувати
   marker = new google.maps.Marker({
     map,
     draggable: true
@@ -227,33 +224,37 @@ function initMap() {
   const info = document.getElementById("mapInfo");
   const confirmBtn = document.getElementById("confirmAddressBtn");
 
+  // Обробник кліку по карті
   map.addListener("click", (e) => setPositionFromCoords(e.latLng, info, confirmBtn));
 
+  // Обробник перетягування маркера
   marker.addListener("dragend", () => {
     const pos = marker.getPosition();
     setPositionFromCoords(pos, info, confirmBtn);
   });
 }
 
+// ІНІЦІАЛІЗАЦІЯ АВТОКОМПЛІТУ ПРИ ВІДКРИТТІ МОДАЛЬНОГО ВІКНА
 document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
   const input = document.getElementById("addressInput");
   const info = document.getElementById("mapInfo");
   const confirmBtn = document.getElementById("confirmAddressBtn");
 
-  // Нужно для корректного отображения карты
+  // Потрібно для коректного відображення карти
   setTimeout(() => google.maps.event.trigger(map, "resize"), 100);
 
-  // Автокомплит создаётся только 1 раз
   if (!autocomplete) {
     autocomplete = new google.maps.places.Autocomplete(input, {
       componentRestrictions: { country: "ua" },
       fields: ["formatted_address", "geometry", "address_components"]
     });
 
+    // Обробник вибору адреси з автокомпліту
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (!place.geometry) return;
 
+      // Центруємо карту на обраному місці
       map.setCenter(place.geometry.location);
       map.setZoom(16);
       marker.setPosition(place.geometry.location);
@@ -265,7 +266,7 @@ document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
   }
 });
 
-/* --- Функція для встановлення позиції маркера та отримання адреси --- */
+// ВСТАНОВЛЕННЯ ПОЗИЦІЇ МАРКЕРА ТА ОТРИМАННЯ АДРЕСИ
 function setPositionFromCoords(latlng) {
   marker.setPosition(latlng);
 
@@ -273,6 +274,7 @@ function setPositionFromCoords(latlng) {
   const info = document.getElementById("mapInfo");
   const confirmBtn = document.getElementById("confirmAddressBtn");
 
+  // Зворотне геокодування для отримання адреси з координат
   geocoder.geocode({ location: latlng, region: "UA", language: "uk" }, (results, status) => {
     if (status === "OK" && results[0]) {
       selectedAddress = extractUkrainianAddress(results[0]);
@@ -286,7 +288,6 @@ function setPositionFromCoords(latlng) {
   });
 }
 
-/* --- Функція для українізації адреси --- */
 function extractUkrainianAddress(place) {
   if (!place.address_components) return place.formatted_address;
 
@@ -296,6 +297,7 @@ function extractUkrainianAddress(place) {
   let district = "";
   let region = "";
 
+  // Парсимо компоненти адреси
   for (const comp of place.address_components) {
     if (comp.types.includes("route")) street = comp.long_name;
     if (comp.types.includes("street_number")) number = comp.long_name;
@@ -315,14 +317,14 @@ function extractUkrainianAddress(place) {
   return address.trim();
 }
 
-/* --- Підтвердження вибору адреси --- */
+// ПІДТВЕРДЖЕННЯ ВИБОРУ АДРЕСИ
 document.getElementById("confirmAddressBtn").addEventListener("click", () => {
   if (!selectedAddress) return;
 
+  // Зберігаємо адресу в приховане поле форми
   document.getElementById("deliveryAddress").value = selectedAddress;
   document.getElementById("selectedAddressDisplay").textContent = selectedAddress;
 
-  // ВИПРАВЛЕННЯ: правильне закриття модального вікна
   const modalElement = document.getElementById("mapModal");
   const modal = bootstrap.Modal.getInstance(modalElement);
   if (modal) {
@@ -330,191 +332,191 @@ document.getElementById("confirmAddressBtn").addEventListener("click", () => {
   }
 });
 
-/* --- Фікс карти при відкритті модального --- */
+// ФІКС КАРТИ ПРИ ВІДКРИТТІ МОДАЛЬНОГО ВІКНА
 document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
   setTimeout(() => {
     google.maps.event.trigger(map, "resize");
     map.setCenter({ lat: 49.44499, lng: 32.06057 });
   }, 200);
 });
+
+// ЗМІНА КІЛЬКОСТІ ТОВАРУ В КОШИКУ
+function changeQty(btn, action) {
+  const key = btn.getAttribute('data-key');
+  const row = btn.closest('.cart-item');
+  const input = row.querySelector('.qty-input');
+  let newQty = parseInt(input.value);
+
+  // Змінюємо кількість
+  if (action === 'inc') {
+    newQty++;
+  } else if (action === 'dec' && newQty > 1) {
+    newQty--;
+  }
+
+  input.value = newQty;
+  
+  const priceText = row.querySelector('.item-price').textContent;
+  const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
+  const subtotal = price * newQty;
+  row.querySelector('.item-total strong').textContent = subtotal + ' грн';
+
+  updateTotalPrice();
+  saveCartToLocalStorage();
+
+  fetch('../Presenter/cart_actions.php?qty=' + encodeURIComponent(key) + '&action=' + action, {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'Accept': 'application/json'
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    console.log('qty response', data);
+    if (!data.success) console.error('Server error (qty update):', data);
+  })
+  .catch(err => {
+    console.error('Ошибка при синхронизации с сервером:', err);
+  });
+}
+
+// ВИДАЛЕННЯ ТОВАРУ З КОШИКА
+function removeItem(btn) {
+  const key = btn.getAttribute('data-key');
+  const row = btn.closest('.cart-item');
+
+  row.remove();
+
+  updateTotalPrice();
+  saveCartToLocalStorage();
+
+  // Синхронізація з сервером
+  fetch('../Presenter/cart_actions.php?remove=' + encodeURIComponent(key), {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'Accept': 'application/json'
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    console.log('remove response', data);
+    if (!data.success) {
+      console.error('Server error (remove):', data);
+      // Відновлюємо товар у разі помилки
+      if (row && !document.querySelector('.cart-table tbody').contains(row)) {
+        document.querySelector('.cart-table tbody').appendChild(row);
+        updateTotalPrice();
+        saveCartToLocalStorage();
+      }
+    }
+  })
+  .catch(err => {
+    console.error('Ошибка при синхронизации с сервером:', err);
+  });
+}
+
+// ОНОВЛЕННЯ ЗАГАЛЬНОЇ СУМИ ЗАМОВЛЕННЯ
+function updateTotalPrice() {
+  let total = 0;
+  document.querySelectorAll('.cart-item').forEach(row => {
+    const totalText = row.querySelector('.item-total strong').textContent;
+    const subtotal = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+    total += subtotal;
+  });
+  const totalElement = document.querySelector('.form-total strong');
+  if (totalElement) {
+    totalElement.textContent = total + ' грн';
+  }
+}
+
+// ЗБЕРЕЖЕННЯ КОШИКА В LOCALSTORAGE
+function saveCartToLocalStorage() {
+  const cart = {};
+  document.querySelectorAll('.cart-item').forEach(row => {
+    const button = row.querySelector('.qty-btn');
+    const key = button.getAttribute('data-key');
+    const qty = parseInt(row.querySelector('.qty-input').value);
+    const priceText = row.querySelector('.item-price').textContent;
+    const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
+    const name = row.querySelector('.item-name').textContent;
+    
+    cart[key] = { name, price, qty };
+  });
+  localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+function toggleDeliveryUI() {
+  const method = document.querySelector('input[name="delivery_method"]:checked')?.value;
+  const selfPickupSection = document.getElementById('selfPickupSection');
+  const deliverySection = document.getElementById('deliverySection');
+  const addressSelect = document.getElementById('addressSelect');
+  const deliveryAddress = document.getElementById('deliveryAddress');
+
+  if (method === 'self') {
+    // Показуємо вибір адреси закладу
+    selfPickupSection.style.display = 'block';
+    deliverySection.style.display = 'none';
+    addressSelect.required = true;
+    deliveryAddress.required = false;
+  } else if (method === 'delivery') {
+    // Показуємо вибір адреси доставки на карті
+    selfPickupSection.style.display = 'none';
+    deliverySection.style.display = 'block';
+    addressSelect.required = false;
+    deliveryAddress.required = true;
+  }
+}
+
+// ВСТАНОВЛЕННЯ АДРЕСИ ДОСТАВКИ
+function setDeliveryAddress(address) {
+  document.getElementById('deliveryAddress').value = address;
+  document.getElementById('selectedAddressDisplay').textContent = 'Адреса: ' + address;
+  document.getElementById('modalAddressDisplay').textContent = 'Вибрана адреса: ' + address;
+}
+
+//Перевіряє заповнення всіх обов'язкових полів форми замовлення
+document.getElementById('orderForm')?.addEventListener('submit', function(e) {
+  const name = document.querySelector('input[name="name"]').value.trim();
+  const payment = document.querySelector('input[name="payment"]:checked');
+  const deliveryTime = document.querySelector('input[name="delivery_time"]:checked');
+  const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+  const method = deliveryMethod?.value;
+  
+  // Перевірка імені
+  if (!name) {
+    e.preventDefault();
+    alert('Будь ласка, введіть ваше ім\'я');
+    return false;
+  }
+  
+  // Перевірка вибору всіх радіо-кнопок
+  if (!payment || !deliveryTime || !deliveryMethod) {
+    e.preventDefault();
+    alert('Будь ласка, виберіть всі обов\'язкові пункти');
+    return false;
+  }
+
+  // Перевірка адреси залежно від способу отримання
+  if (method === 'self') {
+    const addressSelect = document.getElementById('addressSelect');
+    if (!addressSelect.value) {
+      e.preventDefault();
+      alert('Будь ласка, оберіть адресу закладу');
+      return false;
+    }
+  } else if (method === 'delivery') {
+    const deliveryAddress = document.getElementById('deliveryAddress');
+    if (!deliveryAddress.value) {
+      e.preventDefault();
+      alert('Будь ласка, оберіть адресу доставки на карті');
+      return false;
+    }
+  }
+});
 </script>
 
-
-
-
-    <script>
-      function changeQty(btn, action) {
-        const key = btn.getAttribute('data-key');
-        const row = btn.closest('.cart-item');
-        const input = row.querySelector('.qty-input');
-        let newQty = parseInt(input.value);
-
-        if (action === 'inc') {
-          newQty++;
-        } else if (action === 'dec' && newQty > 1) {
-          newQty--;
-        }
-
-        input.value = newQty;
-        
-        const priceText = row.querySelector('.item-price').textContent;
-        const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
-        const subtotal = price * newQty;
-        row.querySelector('.item-total strong').textContent = subtotal + ' грн';
-        
-        updateTotalPrice();
-        
-        saveCartToLocalStorage();
-
-        fetch('../Presenter/cart_actions.php?qty=' + encodeURIComponent(key) + '&action=' + action, {
-          method: 'GET',
-          credentials: 'same-origin',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-          }
-        })
-        .then(r => r.json())
-        .then(data => {
-          console.log('qty response', data);
-          if (!data.success) console.error('Server error (qty update):', data);
-        })
-        .catch(err => {
-          console.error('Ошибка при синхронизации с сервером:', err);
-        });
-      }
-
-      function removeItem(btn) {
-        const key = btn.getAttribute('data-key');
-        const row = btn.closest('.cart-item');
-      
-        row.remove();
-        
-        updateTotalPrice();
-        
-        saveCartToLocalStorage();
-        
-        const cartTable = document.querySelector('.cart-table tbody');
-        if (cartTable.children.length === 0) {
-          location.reload();
-        }
-        
-        fetch('../Presenter/cart_actions.php?remove=' + encodeURIComponent(key), {
-          method: 'GET',
-          credentials: 'same-origin',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-          }
-        })
-        .then(r => r.json())
-        .then(data => {
-          console.log('remove response', data);
-          if (!data.success) {
-            console.error('Server error (remove):', data);
-            if (row && !document.querySelector('.cart-table tbody').contains(row)) {
-              document.querySelector('.cart-table tbody').appendChild(row);
-              updateTotalPrice();
-              saveCartToLocalStorage();
-            }
-          }
-        })
-        .catch(err => {
-          console.error('Ошибка при синхронизации с сервером:', err);
-        });
-      }
-
-      function updateTotalPrice() {
-        let total = 0;
-        document.querySelectorAll('.cart-item').forEach(row => {
-          const totalText = row.querySelector('.item-total strong').textContent;
-          const subtotal = parseFloat(totalText.replace(/[^0-9.]/g, ''));
-          total += subtotal;
-        });
-        const totalElement = document.querySelector('.form-total strong');
-        if (totalElement) {
-          totalElement.textContent = total + ' грн';
-        }
-      }
-
-      function saveCartToLocalStorage() {
-        const cart = {};
-        document.querySelectorAll('.cart-item').forEach(row => {
-          const button = row.querySelector('.qty-btn');
-          const key = button.getAttribute('data-key');
-          const qty = parseInt(row.querySelector('.qty-input').value);
-          const priceText = row.querySelector('.item-price').textContent;
-          const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
-          const name = row.querySelector('.item-name').textContent;
-          
-          cart[key] = { name, price, qty };
-        });
-        localStorage.setItem('cart', JSON.stringify(cart));
-      }
-
-      function toggleDeliveryUI() {
-        const method = document.querySelector('input[name="delivery_method"]:checked')?.value;
-        const selfPickupSection = document.getElementById('selfPickupSection');
-        const deliverySection = document.getElementById('deliverySection');
-        const addressSelect = document.getElementById('addressSelect');
-        const deliveryAddress = document.getElementById('deliveryAddress');
-
-        if (method === 'self') {
-          selfPickupSection.style.display = 'block';
-          deliverySection.style.display = 'none';
-          addressSelect.required = true;
-          deliveryAddress.required = false;
-        } else if (method === 'delivery') {
-          selfPickupSection.style.display = 'none';
-          deliverySection.style.display = 'block';
-          addressSelect.required = false;
-          deliveryAddress.required = true;
-        }
-      }
-
-      // Set address from map modal (called from map selection)
-      function setDeliveryAddress(address) {
-        document.getElementById('deliveryAddress').value = address;
-        document.getElementById('selectedAddressDisplay').textContent = 'Адреса: ' + address;
-        document.getElementById('modalAddressDisplay').textContent = 'Вибрана адреса: ' + address;
-      }
-
-      document.getElementById('orderForm')?.addEventListener('submit', function(e) {
-        const name = document.querySelector('input[name="name"]').value.trim();
-        const payment = document.querySelector('input[name="payment"]:checked');
-        const deliveryTime = document.querySelector('input[name="delivery_time"]:checked');
-        const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-        const method = deliveryMethod?.value;
-        
-        if (!name) {
-          e.preventDefault();
-          alert('Будь ласка, введіть ваше ім\'я');
-          return false;
-        }
-        
-        if (!payment || !deliveryTime || !deliveryMethod) {
-          e.preventDefault();
-          alert('Будь ласка, виберіть всі обов\'язкові пункти');
-          return false;
-        }
-
-        // Ensure address is selected based on delivery method
-        if (method === 'self') {
-          const addressSelect = document.getElementById('addressSelect');
-          if (!addressSelect.value) {
-            e.preventDefault();
-            alert('Будь ласка, оберіть адресу закладу');
-            return false;
-          }
-        } else if (method === 'delivery') {
-          const deliveryAddress = document.getElementById('deliveryAddress');
-          if (!deliveryAddress.value) {
-            e.preventDefault();
-            alert('Будь ласка, оберіть адресу доставки на карті');
-            return false;
-          }
-        }
-      });
-    </script>
-
-    <?php require __DIR__ . '/footer.php'; ?>
+<?php require __DIR__ . '/footer.php'; ?>
