@@ -1,6 +1,7 @@
 <?php
-require __DIR__ . '/../Model/db.php';
+require_once __DIR__ . '/../Model/db.php';
 
+// Отримання всіх чеків з інформацією про клієнтів та адреси
 $sql = "
 SELECT 
     r.id AS receipt_id,
@@ -18,7 +19,7 @@ ORDER BY r.id DESC
 
 $receipts = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
-// Отримуємо товари для кожного чеку
+// Отримання всіх товарів для чеків
 $ordersSql = "
 SELECT 
     o.receipt_id,
@@ -32,7 +33,7 @@ ORDER BY o.receipt_id DESC
 
 $ordersResult = $pdo->query($ordersSql)->fetchAll(PDO::FETCH_ASSOC);
 
-// Групуємо товари по чеках
+// Групування товарів по чеках
 $ordersByReceipt = [];
 foreach ($ordersResult as $order) {
     $ordersByReceipt[$order['receipt_id']][] = $order;
@@ -41,114 +42,124 @@ foreach ($ordersResult as $order) {
 <!doctype html>
 <html lang="uk">
 <head>
-  <meta charset="utf-8">
-  <title>Замовлення — Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .receipt-card {
-      margin-bottom: 30px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .receipt-header {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-bottom: 2px solid #dee2e6;
-    }
-    .receipt-body {
-      padding: 15px;
-    }
-    .product-row {
-      padding: 10px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .product-row:last-child {
-      border-bottom: none;
-    }
-    .total-sum {
-      background-color: #e9ecef;
-      padding: 15px;
-      font-weight: bold;
-      text-align: right;
-      font-size: 1.2em;
-    }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Замовлення — Адмін панель</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .receipt-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .receipt-header {
+            background: #f8f9fa;
+            padding: 16px;
+            border-bottom: 2px solid #dee2e6;
+            border-radius: 8px 8px 0 0;
+        }
+        .receipt-body {
+            padding: 16px;
+        }
+        .total-sum {
+            background: #e7f1ff;
+            padding: 12px 16px;
+            border-radius: 0 0 8px 8px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0d6efd;
+            text-align: right;
+        }
+        .product-row:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
 </head>
-<body class="p-4">
+<body class="bg-light">
 
-<div class="container">
-  <h2 class="mb-4">Усі замовлення</h2>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Усі замовлення</h2>
+        <a href="admin.php" class="btn btn-secondary">← Назад до панелі</a>
+    </div>
 
-  <?php if (empty($receipts)): ?>
-    <div class="alert alert-info">Замовлень поки немає</div>
-  <?php else: ?>
-    <?php foreach ($receipts as $receipt): ?>
-      <?php 
-        $receiptId = $receipt['receipt_id'];
-        $products = $ordersByReceipt[$receiptId] ?? [];
-        $totalSum = 0;
-      ?>
-      
-      <div class="receipt-card">
-        <div class="receipt-header">
-          <div class="row">
-            <div class="col-md-3">
-              <strong>Чек #<?= $receiptId ?></strong>
-            </div>
-            <div class="col-md-3">
-              <strong>Клієнт:</strong> <?= htmlspecialchars($receipt['client_name']) ?>
-            </div>
-            <div class="col-md-3">
-              <strong>Телефон:</strong> <?= htmlspecialchars($receipt['client_phone']) ?>
-            </div>
-            <div class="col-md-3">
-              <strong>Дата:</strong> <?= date('d.m.Y H:i', strtotime($receipt['date_time'])) ?>
-            </div>
-          </div>
-          <div class="row mt-2">
-            <div class="col-12">
-              <strong>Адреса:</strong> 
-              <?= htmlspecialchars($receipt['street']) ?>, 
-              <?= htmlspecialchars($receipt['house_number']) ?>, 
-              <?= htmlspecialchars($receipt['city']) ?>
-            </div>
-          </div>
+    <?php if (empty($receipts)): ?>
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Замовлень поки немає
         </div>
+    <?php else: ?>
+        <?php foreach ($receipts as $receipt): ?>
+            <?php 
+                $receiptId = $receipt['receipt_id'];
+                $products = $ordersByReceipt[$receiptId] ?? [];
+                $totalSum = 0;
+            ?>
+            
+            <div class="receipt-card">
+                <div class="receipt-header">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <strong>Чек №<?= $receiptId ?></strong>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Клієнт:</strong> <?= htmlspecialchars($receipt['client_name']) ?>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Телефон:</strong> <?= htmlspecialchars($receipt['client_phone']) ?>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Дата:</strong> <?= date('d.m.Y H:i', strtotime($receipt['date_time'])) ?>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <strong>Адреса доставки:</strong> 
+                            <?= htmlspecialchars($receipt['street']) ?>, 
+                            <?= htmlspecialchars($receipt['house_number']) ?>, 
+                            <?= htmlspecialchars($receipt['city']) ?>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="receipt-body">
-          <table class="table table-sm">
-            <thead>
-              <tr>
-                <th>Товар</th>
-                <th style="width: 100px; text-align: center;">Кількість</th>
-                <th style="width: 120px; text-align: right;">Ціна</th>
-                <th style="width: 120px; text-align: right;">Сума</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($products as $product): 
-                $subtotal = $product['price'] * $product['quantity'];
-                $totalSum += $subtotal;
-              ?>
-                <tr class="product-row">
-                  <td><?= htmlspecialchars($product['product_name']) ?></td>
-                  <td style="text-align: center;"><?= $product['quantity'] ?></td>
-                  <td style="text-align: right;"><?= number_format($product['price'], 2) ?> грн</td>
-                  <td style="text-align: right;"><strong><?= number_format($subtotal, 2) ?> грн</strong></td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
+                <div class="receipt-body">
+                    <?php if (empty($products)): ?>
+                        <p class="text-muted">Немає товарів у замовленні</p>
+                    <?php else: ?>
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Товар</th>
+                                    <th class="text-center" style="width: 120px;">Кількість</th>
+                                    <th class="text-end" style="width: 120px;">Ціна</th>
+                                    <th class="text-end" style="width: 120px;">Сума</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($products as $product): 
+                                    $subtotal = $product['price'] * $product['quantity'];
+                                    $totalSum += $subtotal;
+                                ?>
+                                    <tr class="product-row">
+                                        <td><?= htmlspecialchars($product['product_name']) ?></td>
+                                        <td class="text-center"><?= $product['quantity'] ?></td>
+                                        <td class="text-end"><?= number_format($product['price'], 2) ?> грн</td>
+                                        <td class="text-end"><strong><?= number_format($subtotal, 2) ?> грн</strong></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </div>
 
-        <div class="total-sum">
-          Загальна сума: <?= number_format($totalSum, 2) ?> грн
-        </div>
-      </div>
+                <div class="total-sum">
+                    Загальна сума: <?= number_format($totalSum, 2) ?> грн
+                </div>
+            </div>
 
-    <?php endforeach; ?>
-  <?php endif; ?>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

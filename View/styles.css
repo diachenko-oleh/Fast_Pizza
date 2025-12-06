@@ -206,6 +206,38 @@ body{margin:0;font-family:Segoe UI, Roboto, Arial, sans-serif;background:var(--b
 .submit-btn:active{transform:translateY(0)}
 
 .comments{border-bottom:none}
+
+    .pac-container {
+     z-index: 9999 !important;
+    }
+    .receipt-card {
+      margin-bottom: 30px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .receipt-header {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-bottom: 2px solid #dee2e6;
+    }
+    .receipt-body {
+      padding: 15px;
+    }
+    .product-row {
+      padding: 10px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .product-row:last-child {
+      border-bottom: none;
+    }
+    .total-sum {
+      background-color: #e9ecef;
+      padding: 15px;
+      font-weight: bold;
+      text-align: right;
+      font-size: 1.2em;
+    }
 .card {
         border: none;
         border-radius: 8px;

@@ -16,7 +16,7 @@ $action = $_POST['action'];
 switch ($action) {
     case 'add_pizza':
         if (empty($_POST['id'])) {
-            echo json_encode(['success' => false, 'message' => 'Немає id піци']);
+            echo json_encode(['success' => false, 'message' => 'Немає ID піци']);
             exit;
         }
 
@@ -29,47 +29,54 @@ switch ($action) {
 
         if (!isset($_SESSION['cart'][$key])) {
             $_SESSION['cart'][$key] = [
-                'type' => 'pizza',
-                'id'   => $id,
-                'name' => $name,
-                'price'=> $price,
-                'img'  => $img,
-                'qty'  => 0
+                'id'    => $id,
+                'name'  => $name,
+                'price' => $price,
+                'img'   => $img,
+                'qty'   => 0,
+                'type'  => 'pizza'
             ];
         }
 
         $_SESSION['cart'][$key]['qty']++;
 
-        echo json_encode(['success' => true, 'message' => "$name додана до кошика"]);
+        echo json_encode([
+            'success' => true, 
+            'message' => "$name додана до кошика",
+            'cart_count' => array_sum(array_column($_SESSION['cart'], 'qty'))
+        ]);
         exit;
 
     case 'add_drink':
-        if (empty($_POST['drink_key'])) {
-            echo json_encode(['success' => false, 'message' => 'Немає ключа напою']);
+        if (empty($_POST['id'])) {
+            echo json_encode(['success' => false, 'message' => 'Немає ID напою']);
             exit;
         }
 
-        $dkey = $_POST['drink_key'];
-        $name = $_POST['name'] ?? ('Напій ' . $dkey);
+        $id = intval($_POST['id']);
+        $name = $_POST['name'] ?? ('Напій #' . $id);
         $price = floatval($_POST['price'] ?? 0);
 
-        $key = "drink_" . $dkey;
+        $key = "drink_" . $id;
 
         if (!isset($_SESSION['cart'][$key])) {
             $_SESSION['cart'][$key] = [
-                'type' => 'drink',
-                'key'  => $dkey,
-                'name' => $name,
-                'price'=> $price,
-                'qty'  => 0
+                'id'    => $id,
+                'name'  => $name,
+                'price' => $price,
+                'qty'   => 0,
+                'type'  => 'drink'
             ];
         }
 
         $_SESSION['cart'][$key]['qty']++;
 
-        echo json_encode(['success' => true, 'message' => "$name доданий до кошика"]);
+        echo json_encode([
+            'success' => true, 
+            'message' => "$name доданий до кошика",
+            'cart_count' => array_sum(array_column($_SESSION['cart'], 'qty'))
+        ]);
         exit;
-
 
     default:
         echo json_encode(['success' => false, 'message' => 'Невідома дія']);

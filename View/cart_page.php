@@ -1,16 +1,16 @@
 <?php
 
 session_start();
-require __DIR__ . '/../Model/products.php';
-require __DIR__ . '/../Model/auth.php';
+require_once __DIR__ . '/../Model/products.php';
+require_once __DIR__ . '/../Model/auth.php';
 
 // Якщо користувач авторизований, отримаємо його дані для попереднього заповнення форми
 $client = get_current_user_client();
 
 $page_title = 'FAST PIZZA — Кошик';
-require __DIR__ . '/header.php';
+require_once __DIR__ . '/header.php';
 
-require __DIR__ . '/../Presenter/cart_actions.php';
+require_once __DIR__ . '/../Presenter/cart_actions.php';
 ?>
 
     <main class="container cart-container">
@@ -194,12 +194,6 @@ require __DIR__ . '/../Presenter/cart_actions.php';
         </div>
       <?php endif; ?>
     </main>
-
-<style>
-.pac-container {
-  z-index: 9999 !important;
-}
-</style>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDe3iJJ1yjlG_VbcjmNpy32wDH6rMteJ0&libraries=places&language=uk&region=UA&callback=initMap" async defer></script>
 

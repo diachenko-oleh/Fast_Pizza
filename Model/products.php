@@ -1,12 +1,14 @@
 <?php
-require __DIR__ . '/db.php';
+require_once __DIR__ . '/db.php';
 
-$sql = "SELECT id, name, price, isPizza FROM products";
+// Отримуємо всі продукти з бази даних
+$sql = "SELECT id, name, price, isPizza FROM products ORDER BY id";
 $stmt = $pdo->query($sql);
 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Розділяємо на піци та напої
 $products = [];
-$drinks   = [];
+$drinks = [];
 
 foreach ($data as $item) {
     if (!empty($item["ispizza"])) {
@@ -15,3 +17,4 @@ foreach ($data as $item) {
         $drinks[] = $item;
     }
 }
+?>

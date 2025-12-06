@@ -1,21 +1,13 @@
 <?php
 session_start();
 if (!isset($_SESSION['cart'])) {
-  $_SESSION['cart'] = [];
+    $_SESSION['cart'] = [];
 }
 
 $page_title = 'FAST PIZZA — Меню';
 
-require __DIR__ . '/../Model/products.php';
-
-foreach ($drinks as &$d) {
-    if (!isset($d['key']) || empty($d['key'])) {
-        $d['key'] = 'drink_' . $d['id']; 
-    }
-}
-unset($d);
-
-require __DIR__ . '/header.php';
+require_once __DIR__ . '/../Model/products.php';
+require_once __DIR__ . '/header.php';
 ?>
 
 <main class="container">
@@ -33,7 +25,16 @@ require __DIR__ . '/header.php';
                     <span class="pname"><?php echo htmlspecialchars($p['name']); ?></span>
                     <span class="price"><?php echo $p['price']; ?> грн</span>
                 </div>
-                <button class="add-button" data-id="<?php echo $p['id']; ?>" onclick="addToCart(this)">Додати</button>
+                <button 
+                    class="add-button" 
+                    data-id="<?php echo $p['id']; ?>"
+                    data-name="<?php echo htmlspecialchars($p['name']); ?>"
+                    data-price="<?php echo $p['price']; ?>"
+                    data-img="<?php echo htmlspecialchars($p['img'] ?? 'images/pizza.jpg'); ?>"
+                    data-type="pizza"
+                    onclick="addToCart(this)">
+                    Додати
+                </button>
             </article>
         <?php endforeach; ?>
     </section>
@@ -47,10 +48,14 @@ require __DIR__ . '/header.php';
                         <span class="dname"><?php echo htmlspecialchars($d['name']); ?></span>
                         <span class="price"><?php echo $d['price']; ?> грн</span>
                     </div>
-                    <button class="add-button"
-                            data-drink="<?php echo htmlspecialchars($d['key']); ?>"
-                            onclick="addToCart(this)">
-                            Додати
+                    <button 
+                        class="add-button"
+                        data-id="<?php echo $d['id']; ?>"
+                        data-name="<?php echo htmlspecialchars($d['name']); ?>"
+                        data-price="<?php echo $d['price']; ?>"
+                        data-type="drink"
+                        onclick="addToCart(this)">
+                        Додати
                     </button>
                 </article>
             <?php endforeach; ?>
@@ -60,61 +65,68 @@ require __DIR__ . '/header.php';
 
 <script>
 function addToCart(button) {
-    const id = button.getAttribute('data-id');
-    const drinkKey = button.getAttribute('data-drink');
-
-    let name = '';
-    let price = 0;
-    let img = '';
-
-    if (id) {
-        const article = button.closest('.product');
-        name = article.querySelector('.pname').textContent.trim();
-        price = parseFloat(article.querySelector('.price').textContent.replace(/[^0-9.]/g, ''));
-        img = article.querySelector('img')?.getAttribute('src') || '';
-    }
-
-    if (drinkKey) {
-        const article = button.closest('.drink');
-        name = article.querySelector('.dname').textContent.trim();
-        price = parseFloat(article.querySelector('.price').textContent.replace(/[^0-9.]/g, ''));
-    }
+    const id = button.dataset.id;
+    const name = button.dataset.name;
+    const price = button.dataset.price;
+    const type = button.dataset.type;
+    const img = button.dataset.img || '';
 
     const formData = new FormData();
-
-    if (id) formData.append('action', 'add_pizza');
-    if (drinkKey) formData.append('action', 'add_drink');
-
-    if (id) formData.append('id', id);
-    if (drinkKey) formData.append('drink_key', drinkKey);
-
+    formData.append('action', type === 'pizza' ? 'add_pizza' : 'add_drink');
+    formData.append('id', id);
     formData.append('name', name);
     formData.append('price', price);
-    if (img) formData.append('img', img);
+    
+    if (img) {
+        formData.append('img', img);
+    }
+
+    button.disabled = true;
+    button.textContent = 'Додається...';
 
     fetch('../Presenter/menu_actions.php', {
-    method: 'POST',
-    body: formData
+        method: 'POST',
+        body: formData
     })
-    .then(r => r.json())
-    .then(data => showNotification(data.message));
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            updateCartCounter(data.cart_count);
+        } else {
+            showNotification(data.message || 'Помилка додавання', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Помилка з\'єднання з сервером', 'error');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.textContent = 'Додати';
+    });
 }
 
-
-function showNotification(message) {
+function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
-    notification.className = 'notification';
+    notification.className = `notification ${type}`;
     notification.textContent = message;
     document.body.appendChild(notification);
     
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
+    setTimeout(() => notification.classList.add('show'), 10);
     
     setTimeout(() => {
         notification.classList.add('removing');
         setTimeout(() => notification.remove(), 500);
     }, 2500);
+}
+
+function updateCartCounter(count) {
+    const counter = document.querySelector('.cart-counter');
+    if (counter && count > 0) {
+        counter.textContent = count;
+        counter.style.display = 'inline-block';
+    }
 }
 </script>
 
