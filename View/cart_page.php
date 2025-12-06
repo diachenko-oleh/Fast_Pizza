@@ -170,7 +170,7 @@ require __DIR__ . '/../Presenter/cart_actions.php';
                     </div>
 
                     <div class="modal-footer">
-                      <button id="confirmAddressBtn" class="btn btn-primary" disabled>
+                      <button id="confirmAddressBtn" type="button" class="btn btn-primary" disabled>
                         Підтвердити адресу
                       </button>
                     </div>
@@ -204,10 +204,12 @@ require __DIR__ . '/../Presenter/cart_actions.php';
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDe3iJJ1yjlG_VbcjmNpy32wDH6rMteJ0&libraries=places&language=uk&region=UA&callback=initMap" async defer></script>
 
 <script>
-let map, marker, selectedAddress = "";
+let map, marker, selectedAddress = null;
 let autocomplete = null;
 
-// ІНІЦІАЛІЗАЦІЯ GOOGLE MAPS
+// ---------------------------
+// Ініціалізація карти
+// ---------------------------
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     center: { lat: 49.44499, lng: 32.06057 },
@@ -215,124 +217,151 @@ function initMap() {
     disableDefaultUI: true
   });
 
-  // Створення маркера, який можна перетягувати
   marker = new google.maps.Marker({
     map,
     draggable: true
   });
 
-  const info = document.getElementById("mapInfo");
-  const confirmBtn = document.getElementById("confirmAddressBtn");
-
-  // Обробник кліку по карті
-  map.addListener("click", (e) => setPositionFromCoords(e.latLng, info, confirmBtn));
-
-  // Обробник перетягування маркера
-  marker.addListener("dragend", () => {
-    const pos = marker.getPosition();
-    setPositionFromCoords(pos, info, confirmBtn);
-  });
+  map.addListener("click", (e) => setPositionFromCoords(e.latLng));
+  marker.addListener("dragend", () => setPositionFromCoords(marker.getPosition()));
 }
 
-// ІНІЦІАЛІЗАЦІЯ АВТОКОМПЛІТУ ПРИ ВІДКРИТТІ МОДАЛЬНОГО ВІКНА
+// ---------------------------
+// Ініціалізація автокомпліта
+// ---------------------------
 document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
-  const input = document.getElementById("addressInput");
-  const info = document.getElementById("mapInfo");
-  const confirmBtn = document.getElementById("confirmAddressBtn");
-
-  // Потрібно для коректного відображення карти
   setTimeout(() => google.maps.event.trigger(map, "resize"), 100);
 
   if (!autocomplete) {
-    autocomplete = new google.maps.places.Autocomplete(input, {
-      componentRestrictions: { country: "ua" },
-      fields: ["formatted_address", "geometry", "address_components"]
-    });
+    autocomplete = new google.maps.places.Autocomplete(
+      document.getElementById("addressInput"),
+      {
+        componentRestrictions: { country: "ua" },
+        fields: ["formatted_address", "geometry", "address_components"]
+      }
+    );
 
-    // Обробник вибору адреси з автокомпліту
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (!place.geometry) return;
 
-      // Центруємо карту на обраному місці
       map.setCenter(place.geometry.location);
       map.setZoom(16);
       marker.setPosition(place.geometry.location);
 
-      selectedAddress = extractUkrainianAddress(place);
-      info.textContent = `Вибране місце: ${selectedAddress}`;
-      confirmBtn.disabled = false;
+      const parsed = extractUkrainianAddress(place);
+
+      if (!parsed.valid) {
+        document.getElementById("mapInfo").textContent = "❌ Оберіть конкретний будинок";
+        selectedAddress = null;
+        document.getElementById("confirmAddressBtn").disabled = true;
+        return;
+      }
+
+      selectedAddress = parsed;
+      document.getElementById("mapInfo").textContent = "Вибране місце: " + parsed.fullAddress;
+      document.getElementById("confirmAddressBtn").disabled = false;
     });
   }
 });
 
-// ВСТАНОВЛЕННЯ ПОЗИЦІЇ МАРКЕРА ТА ОТРИМАННЯ АДРЕСИ
+// ---------------------------
+// Отримання адреси по координатам
+// ---------------------------
 function setPositionFromCoords(latlng) {
   marker.setPosition(latlng);
 
   const geocoder = new google.maps.Geocoder();
-  const info = document.getElementById("mapInfo");
-  const confirmBtn = document.getElementById("confirmAddressBtn");
+  geocoder.geocode(
+    { location: latlng, region: "UA", language: "uk" },
+    (results, status) => {
+      const info = document.getElementById("mapInfo");
+      const confirmBtn = document.getElementById("confirmAddressBtn");
 
-  // Зворотне геокодування для отримання адреси з координат
-  geocoder.geocode({ location: latlng, region: "UA", language: "uk" }, (results, status) => {
-    if (status === "OK" && results[0]) {
-      selectedAddress = extractUkrainianAddress(results[0]);
-      info.textContent = `Вибране місце: ${selectedAddress}`;
-      confirmBtn.disabled = false;
-    } else {
-      selectedAddress = "";
-      info.textContent = "Не вдалося визначити адресу";
-      confirmBtn.disabled = true;
+      if (status === "OK" && results[0]) {
+        const parsed = extractUkrainianAddress(results[0]);
+
+        if (!parsed.valid) {
+          info.textContent = "Оберіть конкретний будинок, а не область";
+          selectedAddress = null;
+          confirmBtn.disabled = true;
+          return;
+        }
+        
+        const cityNormalized = parsed.city.toLowerCase().trim();
+        if (cityNormalized !== "черкаси" && cityNormalized !== "м. черкаси") {
+          selectedAddress = null;
+          info.textContent = "Доставка доступна тільки в межах м. Черкаси.";
+          confirmBtn.disabled = true;
+          return;
+        }
+
+        selectedAddress = parsed;
+        info.textContent = "Вибране місце: " + parsed.fullAddress;
+        confirmBtn.disabled = false;
+      } else {
+        selectedAddress = null;
+        info.textContent = "Не вдалося визначити адресу";
+        confirmBtn.disabled = true;
+      }
     }
-  });
+  );
 }
 
+// ---------------------------
+// Парсер української адреси + ВАЛІДАЦІЯ
+// ---------------------------
 function extractUkrainianAddress(place) {
-  if (!place.address_components) return place.formatted_address;
+  if (!place.address_components)
+    return { valid: false, fullAddress: place.formatted_address };
 
   let street = "";
   let number = "";
   let city = "";
-  let district = "";
-  let region = "";
 
-  // Парсимо компоненти адреси
   for (const comp of place.address_components) {
     if (comp.types.includes("route")) street = comp.long_name;
     if (comp.types.includes("street_number")) number = comp.long_name;
     if (comp.types.includes("locality")) city = comp.long_name;
-    if (comp.types.includes("administrative_area_level_2")) district = comp.long_name;
-    if (comp.types.includes("administrative_area_level_1")) region = comp.long_name;
   }
 
-  let address = "";
+  const full =
+    (street || "") +
+    (number ? ", " + number : "") +
+    (city ? ", " + city : "");
 
-  if (street) address += street;
-  if (number) address += ", " + number;
-  if (city) address += ", " + city;
-  if (district && !address.includes(district)) address += ", " + district;
-  if (region && !address.includes(region)) address += ", " + region;
+  const isValid = street !== "" && number !== "" && city !== "";
 
-  return address.trim();
+  return {
+    valid: isValid,
+    street,
+    number,
+    city,
+    fullAddress: full.trim()
+  };
 }
 
-// ПІДТВЕРДЖЕННЯ ВИБОРУ АДРЕСИ
+// ---------------------------
+// Підтвердження адреси
+// ---------------------------
 document.getElementById("confirmAddressBtn").addEventListener("click", () => {
-  if (!selectedAddress) return;
+  if (!selectedAddress || !selectedAddress.valid) return;
 
-  // Зберігаємо адресу в приховане поле форми
-  document.getElementById("deliveryAddress").value = selectedAddress;
-  document.getElementById("selectedAddressDisplay").textContent = selectedAddress;
+  document.getElementById("deliveryAddress").value = JSON.stringify({
+    street: selectedAddress.street,
+    house_number: selectedAddress.number,
+    city: selectedAddress.city
+  });
 
-  const modalElement = document.getElementById("mapModal");
-  const modal = bootstrap.Modal.getInstance(modalElement);
-  if (modal) {
-    modal.hide();
-  }
+  document.getElementById("selectedAddressDisplay").textContent =
+    selectedAddress.fullAddress;
+
+  bootstrap.Modal.getInstance(document.getElementById("mapModal")).hide();
 });
 
-// ФІКС КАРТИ ПРИ ВІДКРИТТІ МОДАЛЬНОГО ВІКНА
+// ---------------------------
+// Фікс ресайзу карти
+// ---------------------------
 document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
   setTimeout(() => {
     google.maps.event.trigger(map, "resize");
