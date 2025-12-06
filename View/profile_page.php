@@ -97,6 +97,12 @@ unset($_SESSION['success'], $_SESSION['error']);
                         </div>
                     </form>
 
+                    <div class="mt-3 d-grid gap-2">
+                        <a href="order_history.php" class="btn btn-info text-white">
+                            Історія замовлень
+                        </a>
+                    </div>
+
                     <div class="mt-3 d-flex gap-2 align-items-center">
                         <a href="menu_page.php" class="text-decoration-none">← Повернутися на головну</a>
                         <form method="POST" action="../Presenter/auth_actions.php" style="margin-left: auto; margin-bottom: 0;">

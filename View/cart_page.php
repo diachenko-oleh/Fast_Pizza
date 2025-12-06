@@ -95,20 +95,6 @@ require_once __DIR__ . '/../Presenter/cart_actions.php';
               </div>
 
               <div class="form-section">
-                <label class="form-label">Дата та час доставки:</label>
-                <div class="radio-group">
-                  <label class="radio-label">
-                    <input type="radio" name="delivery_time" value="soon" required>
-                    <span>якнайшвидше</span>
-                  </label>
-                  <label class="radio-label">
-                    <input type="radio" name="delivery_time" value="scheduled" required>
-                    <span>в указаний час</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="form-section">
                 <label class="form-label">Спосіб отримання замовлення:</label>
                 <div class="radio-group">
                   <label class="radio-label">
@@ -246,7 +232,7 @@ document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
       const parsed = extractUkrainianAddress(place);
 
       if (!parsed.valid) {
-        document.getElementById("mapInfo").textContent = "❌ Оберіть конкретний будинок";
+        document.getElementById("mapInfo").textContent = "Оберіть конкретний будинок";
         selectedAddress = null;
         document.getElementById("confirmAddressBtn").disabled = true;
         return;
@@ -559,7 +545,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo "<script>alert('Замовлення успішно оформлено!'); window.location='menu_page.php';</script>";
 }
 ?>
-
 function toggleDeliveryUI() {
   const method = document.querySelector('input[name="delivery_method"]:checked')?.value;
   const selfPickupSection = document.getElementById('selfPickupSection');
@@ -572,26 +557,26 @@ function toggleDeliveryUI() {
     selfPickupSection.style.display = 'block';
     deliverySection.style.display = 'none';
     addressSelect.required = true;
+    addressSelect.disabled = false; // Активуємо select
     deliveryAddress.required = false;
+    deliveryAddress.disabled = true; // Деактивуємо hidden input
+    deliveryAddress.removeAttribute('required');
   } else if (method === 'delivery') {
     // Показуємо вибір адреси доставки на карті
     selfPickupSection.style.display = 'none';
     deliverySection.style.display = 'block';
     addressSelect.required = false;
+    addressSelect.disabled = true; // Деактивуємо select
+    addressSelect.removeAttribute('required');
     deliveryAddress.required = true;
+    deliveryAddress.disabled = false; // Активуємо hidden input
   }
-}
-
-// ВСТАНОВЛЕННЯ АДРЕСИ ДОСТАВКИ
-function setDeliveryAddress(address) {
-  document.getElementById('deliveryAddress').value = address;
-  document.getElementById('selectedAddressDisplay').textContent = 'Адреса: ' + address;
-  document.getElementById('modalAddressDisplay').textContent = 'Вибрана адреса: ' + address;
 }
 
 //Перевіряє заповнення всіх обов'язкових полів форми замовлення
 document.getElementById('orderForm')?.addEventListener('submit', function(e) {
   const name = document.querySelector('input[name="name"]').value.trim();
+  const phone = document.querySelector('input[name="phone"]').value.trim();
   const payment = document.querySelector('input[name="payment"]:checked');
   const deliveryTime = document.querySelector('input[name="delivery_time"]:checked');
   const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
@@ -604,10 +589,17 @@ document.getElementById('orderForm')?.addEventListener('submit', function(e) {
     return false;
   }
   
+  // Перевірка телефону
+  if (!phone) {
+    e.preventDefault();
+    alert('Будь ласка, введіть ваш телефон');
+    return false;
+  }
+  
   // Перевірка вибору всіх радіо-кнопок
   if (!payment || !deliveryTime || !deliveryMethod) {
     e.preventDefault();
-    alert('Будь ласка, виберіть всі обов\'язкові пункти');
+    alert('Будь ласка, виберіть всі обов\'язкові пункти (оплата, час доставки, спосіб отримання)');
     return false;
   }
 
@@ -627,6 +619,8 @@ document.getElementById('orderForm')?.addEventListener('submit', function(e) {
       return false;
     }
   }
+  
+  return true;
 });
 </script>
 

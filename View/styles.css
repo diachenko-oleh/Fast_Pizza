@@ -206,37 +206,68 @@ body{margin:0;font-family:Segoe UI, Roboto, Arial, sans-serif;background:var(--b
 .submit-btn:active{transform:translateY(0)}
 
 .comments{border-bottom:none}
-
+    .receipt-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .receipt-header {
+            background: #f8f9fa;
+            padding: 16px;
+            border-bottom: 2px solid #dee2e6;
+            border-radius: 8px 8px 0 0;
+        }
+        .receipt-body {
+            padding: 16px;
+        }
+        .total-sum {
+            background: #e7f1ff;
+            padding: 12px 16px;
+            border-radius: 0 0 8px 8px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0d6efd;
+            text-align: right;
+        }
+        .product-row:hover {
+            background-color: #f8f9fa;
+        }
+        .comment-block {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+        }
+        .comment-label {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .comment-label::before {
+            content: "💬";
+            font-size: 16px;
+        }
+        .comment-text {
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.6;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid rgba(255, 255, 255, 0.5);
+        }
     .pac-container {
      z-index: 9999 !important;
-    }
-    .receipt-card {
-      margin-bottom: 30px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .receipt-header {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-bottom: 2px solid #dee2e6;
-    }
-    .receipt-body {
-      padding: 15px;
-    }
-    .product-row {
-      padding: 10px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .product-row:last-child {
-      border-bottom: none;
-    }
-    .total-sum {
-      background-color: #e9ecef;
-      padding: 15px;
-      font-weight: bold;
-      text-align: right;
-      font-size: 1.2em;
     }
 .card {
         border: none;

@@ -60,6 +60,9 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
 // Обробка POST запиту (оформлення замовлення)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
+    // DEBUG: логуємо дані форми
+    error_log("POST data: " . print_r($_POST, true));
+    
     if (empty($_SESSION['cart'])) {
         echo "<script>alert('Кошик порожній!'); window.location='menu_page.php';</script>";
         exit;
@@ -74,10 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $client_id = $client['id'];
     $delivery_method = $_POST['delivery_method'] ?? '';
+    $comments = trim($_POST['comments'] ?? '');
     
     // Валідація обов'язкових полів
-    if (empty($delivery_method) || empty($_POST['address'])) {
-        echo "<script>alert('Заповніть всі обов\\'язкові поля'); window.location='cart_page.php';</script>";
+    if (empty($delivery_method)) {
+        echo "<script>alert('Оберіть спосіб отримання замовлення'); window.location='cart_page.php';</script>";
+        exit;
+    }
+    
+    if (empty($_POST['address'])) {
+        echo "<script>alert('Вкажіть адресу'); window.location='cart_page.php';</script>";
         exit;
     }
     
@@ -91,11 +100,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $city = 'Черкаси';
         
         if ($delivery_method === 'self') {
-            // Самовивіз - парсимо звичайну строку
-            $addressParts = array_map('trim', explode(',', $_POST['address']));
-            $street = $addressParts[0] ?? '';
-            $house = $addressParts[1] ?? '';
-            $city = $addressParts[2] ?? 'Черкаси';
+            // Самовивіз - отримуємо повну адресу з select
+            // Формат: "бульвар Шевченка, 60, Черкаси"
+            $fullAddress = trim($_POST['address']);
+            $addressParts = array_map('trim', explode(',', $fullAddress));
+            
+            // Розбиваємо на компоненти
+            if (count($addressParts) >= 2) {
+                $street = $addressParts[0]; // "бульвар Шевченка"
+                $house = $addressParts[1];  // "60"
+                $city = $addressParts[2] ?? 'Черкаси'; // "Черкаси"
+            } else {
+                throw new Exception('Невірний формат адреси самовивозу');
+            }
         } else {
             // Доставка - парсимо JSON
             $addressData = json_decode($_POST['address'], true);
@@ -134,19 +151,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception('Помилка створення адреси');
         }
         
-        // 2. Створення чека
+        // 2. Створення чека з коментарем
         $courier_id = 1; // Тимчасовий курʼєр
         
         $stmtReceipt = $pdo->prepare("
-            INSERT INTO receipt (client_id, address_id, date_time, courier_id)
-            VALUES (:client_id, :address_id, NOW(), :courier_id)
+            INSERT INTO receipt (client_id, address_id, date_time, courier_id, comment)
+            VALUES (:client_id, :address_id, NOW(), :courier_id, :comment)
             RETURNING id
         ");
         
         $stmtReceipt->execute([
             ':client_id' => $client_id,
             ':address_id' => $address_id,
-            ':courier_id' => $courier_id
+            ':courier_id' => $courier_id,
+            ':comment' => $comments
         ]);
         
         $receiptResult = $stmtReceipt->fetch(PDO::FETCH_ASSOC);
