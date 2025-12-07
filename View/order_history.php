@@ -77,7 +77,7 @@ foreach ($ordersResult as $order) {
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Історія замовлень</h2>
-        <a href="profile.php" class="btn btn-secondary">← Назад до профілю</a>
+        <a href="profile_page.php" class="btn btn-secondary">← Назад до профілю</a>
     </div>
 
     <?php if (empty($receipts)): ?>

@@ -597,9 +597,9 @@ document.getElementById('orderForm')?.addEventListener('submit', function(e) {
   }
   
   // Перевірка вибору всіх радіо-кнопок
-  if (!payment || !deliveryTime || !deliveryMethod) {
+  if (!payment || !deliveryMethod) {
     e.preventDefault();
-    alert('Будь ласка, виберіть всі обов\'язкові пункти (оплата, час доставки, спосіб отримання)');
+    alert('Будь ласка, виберіть всі обов\'язкові пункти (оплата, спосіб отримання)');
     return false;
   }
 
