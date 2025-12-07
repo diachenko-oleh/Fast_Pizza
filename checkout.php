@@ -3,7 +3,7 @@ if ($payment_method === 'card') {
 
     require 'vendor/autoload.php';
 
-    \Stripe\Stripe::setApiKey('sk_test_51SbfgPPMUwJQfY2hNdCohPSg3kmj7KYApHVTlHRPN3pEVPe6HqSrzlLtrmwhDLHa0mTQa2ucDRJD5nZi5zub8L7q007iSiV5yn');
+    \Stripe\Stripe::setApiKey('Ключ в тг');
 
     $session = \Stripe\Checkout\Session::create([
         'mode' => 'payment',
