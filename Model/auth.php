@@ -121,7 +121,7 @@ function get_current_user_client() {
     
     if (isset($_SESSION['client_id'])) {
         global $pdo;
-        $sql = "SELECT id, full_name, phone, email FROM client WHERE id = :id LIMIT 1";
+        $sql = "SELECT id, full_name, phone, email, billing_id FROM client WHERE id = :id LIMIT 1";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => (int)$_SESSION['client_id']]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -173,6 +173,22 @@ function set_client_session($client_id, $client_data = null) {
     if ($client_data) {
         $_SESSION['client_name'] = $client_data['full_name'] ?? '';
         $_SESSION['client_phone'] = $client_data['phone'] ?? '';
+    }
+}
+
+/**
+ * Update client's Stripe customer id (if the DB has such a column).
+ */
+function update_client_stripe_id($client_id, $stripe_customer_id) {
+    global $pdo;
+    try {
+        $sql = "UPDATE client SET billing_id = :stripe WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([':stripe' => $stripe_customer_id, ':id' => (int)$client_id]);
+    } catch (Exception $e) {
+        // If column doesn't exist or other DB error, ignore to avoid breaking registration
+        error_log('Failed to save stripe id: ' . $e->getMessage());
+        return false;
     }
 }
 

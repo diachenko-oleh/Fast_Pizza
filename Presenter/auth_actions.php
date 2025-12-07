@@ -62,6 +62,32 @@ if ($action === 'register') {
         if ($client) {
             $_SESSION['client_id'] = $client['id'];
             $_SESSION['client_name'] = $client['full_name'];
+            // Try to create a Stripe customer for billing and store the customer id
+            try {
+                require_once __DIR__ . '/../vendor/autoload.php';
+                require_once __DIR__ . '/../View/config.php';
+                if (defined('STRIPE_SECRET_KEY') && STRIPE_SECRET_KEY) {
+                    \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);
+                    $stripeCustomer = \Stripe\Customer::create([
+                        'name' => $client['full_name'] ?? '',
+                        'email' => $client['email'] ?? ''
+                    ]);
+                    if (!empty($stripeCustomer->id)) {
+                        // store stripe id in database if possible
+                        if (function_exists('update_client_stripe_id')) {
+                            try {
+                                update_client_stripe_id($client['id'], $stripeCustomer->id);
+                            } catch (Exception $e) {
+                                // ignore DB update failures
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                // don't block registration on stripe errors; log if possible
+                error_log('Stripe customer creation failed: ' . $e->getMessage());
+            }
+
             header('Location: ../View/menu_page.php?msg=' . urlencode('Реєстрація пройшла успішно. Ви увійшли як ' . $client['full_name']));
         } else {
             header('Location: ../View/auth_page.php?tab=login&msg=' . urlencode($result['message']));
