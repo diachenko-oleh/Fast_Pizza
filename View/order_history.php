@@ -2,21 +2,17 @@
 require_once __DIR__ . '/../Model/auth.php';
 require_once __DIR__ . '/../Model/db.php';
 
-$page_title = 'Історія замовлень';
-require __DIR__ . '/header.php';
+// Перевірка чи користувач авторизований
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_SESSION['client_id'])) {
-    header('Location: auth.php');
+    header('Location: auth_page.php');
     exit;
 }
 
-$client = get_current_user_client();
-if (!$client) {
-    header('Location: auth.php');
-    exit;
-}
-
-$client_id = $client['id'];
+$client_id = $_SESSION['client_id'];
 
 // Отримання всіх замовлень поточного клієнта
 $sql = "
@@ -63,7 +59,6 @@ foreach ($ordersResult as $order) {
     $ordersByReceipt[$order['receipt_id']][] = $order;
 }
 ?>
-
 <!doctype html>
 <html lang="uk">
 <head>
@@ -95,14 +90,17 @@ foreach ($ordersResult as $order) {
             <div class="receipt-card">
                 <div class="receipt-header">
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <strong>Замовлення №<?= $receiptId ?></strong>
+                        <div class="col-md-3">
+                            <strong>Чек №<?= $receiptId ?></strong>
                         </div>
-                        <div class="col-md-4">
-                            <strong>Дата:</strong> <?= date('d.m.Y H:i', strtotime($receipt['date_time'])) ?>
+                        <div class="col-md-3">
+                            <strong>Клієнт:</strong> <?= htmlspecialchars($receipt['client_name']) ?>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <strong>Телефон:</strong> <?= htmlspecialchars($receipt['client_phone']) ?>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Дата:</strong> <?= date('d.m.Y H:i', strtotime($receipt['date_time'])) ?>
                         </div>
                     </div>
                     <div class="row mt-2">
@@ -115,7 +113,7 @@ foreach ($ordersResult as $order) {
                     </div>
                     <?php if (!empty($receipt['comment'])): ?>
                     <div class="comment-block">
-                        <div class="comment-label">Ваш коментар</div>
+                        <div class="comment-label">Коментар клієнта</div>
                         <div class="comment-text"><?= htmlspecialchars($receipt['comment']) ?></div>
                     </div>
                     <?php endif; ?>
@@ -160,8 +158,69 @@ foreach ($ordersResult as $order) {
     <?php endif; ?>
 </div>
 
+<style>
+    .receipt-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .receipt-header {
+        background: #f8f9fa;
+        padding: 16px;
+        border-bottom: 2px solid #dee2e6;
+        border-radius: 8px 8px 0 0;
+    }
+    .receipt-body {
+        padding: 16px;
+    }
+    .total-sum {
+        background: #e7f1ff;
+        padding: 12px 16px;
+        border-radius: 0 0 8px 8px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #0d6efd;
+        text-align: right;
+    }
+    .product-row:hover {
+        background-color: #f8f9fa;
+    }
+    .comment-block {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-top: 12px;
+        box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+    }
+    .comment-label {
+        font-weight: 600;
+        color: #ffffff;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .comment-label::before {
+        content: "💬";
+        font-size: 16px;
+    }
+    .comment-text {
+        color: #ffffff;
+        margin: 0;
+        line-height: 1.6;
+        font-size: 14px;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 8px 12px;
+        border-radius: 6px;
+        border-left: 3px solid rgba(255, 255, 255, 0.5);
+    }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-<?php require __DIR__ . '/footer.php'; ?>

@@ -1,16 +1,17 @@
 <?php
-require __DIR__ . '/../Model/auth.php';
+require_once __DIR__ . '/../Model/auth.php';
+
 $page_title = 'Мій профіль';
 require __DIR__ . '/header.php';
 
 if (!isset($_SESSION['client_id'])) {
-    header('Location: auth.php');
+    header('Location: auth_page.php');
     exit;
 }
 
 $client = get_current_user_client();
 if (!$client) {
-    header('Location: auth.php');
+    header('Location: auth_page.php');
     exit;
 }
 
@@ -115,6 +116,7 @@ unset($_SESSION['success'], $_SESSION['error']);
         </div>
     </div>
 </div>
+
 <script>
     (function(){
         function togglePassword(buttonId, inputId) {
@@ -137,3 +139,5 @@ unset($_SESSION['success'], $_SESSION['error']);
         togglePassword('toggleNewPasswordConfirm', 'new_password_confirm');
     })();
 </script>
+
+<?php require __DIR__ . '/footer.php'; ?>

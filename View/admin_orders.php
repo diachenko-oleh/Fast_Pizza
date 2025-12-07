@@ -53,7 +53,7 @@ foreach ($ordersResult as $order) {
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Усі замовлення</h2>
-        <a href="admin.php" class="btn btn-secondary">← Назад до панелі</a>
+        <a href="admin_page.php" class="btn btn-secondary">← Назад до панелі</a>
     </div>
 
     <?php if (empty($receipts)): ?>
@@ -138,7 +138,68 @@ foreach ($ordersResult as $order) {
         <?php endforeach; ?>
     <?php endif; ?>
 </div>
-
+<style>
+        .receipt-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .receipt-header {
+            background: #f8f9fa;
+            padding: 16px;
+            border-bottom: 2px solid #dee2e6;
+            border-radius: 8px 8px 0 0;
+        }
+        .receipt-body {
+            padding: 16px;
+        }
+        .total-sum {
+            background: #e7f1ff;
+            padding: 12px 16px;
+            border-radius: 0 0 8px 8px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0d6efd;
+            text-align: right;
+        }
+        .product-row:hover {
+            background-color: #f8f9fa;
+        }
+        .comment-block {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+        }
+        .comment-label {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .comment-label::before {
+            content: "💬";
+            font-size: 16px;
+        }
+        .comment-text {
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.6;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
