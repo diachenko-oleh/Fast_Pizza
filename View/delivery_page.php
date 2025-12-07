@@ -1,6 +1,7 @@
 <?php
 $page_title = 'FAST PIZZA — Доставка';
 require __DIR__ . '/header.php';
+require_once __DIR__ . '/config.php';
 ?>
 
 <main class="delivery-container">
@@ -44,19 +45,21 @@ require __DIR__ . '/header.php';
     </div>
 </main>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDe3iJJ1yjlG_VbcjmNpy32wDH6rMteJ0&libraries=places&language=uk&region=UA&callback=initDeliveryMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&libraries=places&language=uk&region=UA&callback=initDeliveryMap" async defer></script>
 
 <script>
 let map, marker, selectedAddress = null, autocomplete = null;
 let restaurantLocation = null;
 let deliveryLocation = null;
+let directionsService = null;
+let directionsRenderer = null;
 
 // Ініціалізація карти
 function initDeliveryMap() {
     map = new google.maps.Map(document.getElementById('deliveryMap'), {
         center: { lat: 49.44499, lng: 32.06057 },
         zoom: 14,
-        disableDefaultUI: false,
+        disableDefaultUI: true,
         mapTypeControl: false
     });
 
@@ -64,6 +67,18 @@ function initDeliveryMap() {
         map: map,
         draggable: true,
         title: "Перетягніть для вибору адреси"
+    });
+
+    // Ініціалізація сервісів маршрутизації
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: false, // Показувати маркери початку/кінця
+        polylineOptions: {
+            strokeColor: '#FF6B35',
+            strokeWeight: 5,
+            strokeOpacity: 0.8
+        }
     });
 
     // Клік на карту
@@ -117,6 +132,11 @@ function setDeliveryPosition(latlng) {
 
                 selectedAddress = parsed;
                 document.getElementById("mapInfo").textContent = "Вибрано: " + parsed.fullAddress;
+                
+                // Автоматична побудова маршруту при виборі точки
+                if (restaurantLocation) {
+                    calculateRoute();
+                }
             } else {
                 document.getElementById("mapInfo").textContent = "Не вдалося визначити адресу";
                 deliveryLocation = null;
@@ -158,6 +178,10 @@ function selectRestaurant() {
     
     if (!value) {
         restaurantLocation = null;
+        // Очистити маршрут
+        if (directionsRenderer) {
+            directionsRenderer.setDirections({routes: []});
+        }
         return;
     }
 
@@ -168,9 +192,14 @@ function selectRestaurant() {
     map.setZoom(15);
 
     document.getElementById("mapInfo").textContent = "Обрано заклад: " + select.options[select.selectedIndex].text;
+    
+    // Автоматична побудова маршруту при виборі ресторану
+    if (deliveryLocation) {
+        calculateRoute();
+    }
 }
 
-// Обрахунок маршруту
+// Обрахунок і відображення маршруту
 function calculateRoute() {
     if (!restaurantLocation) {
         alert("Будь ласка, оберіть заклад для самовивозу");
@@ -182,25 +211,43 @@ function calculateRoute() {
         return;
     }
 
-    const service = new google.maps.DistanceMatrixService();
-    service.getDistanceMatrix(
-        {
-            origins: [restaurantLocation],
-            destinations: [deliveryLocation],
-            travelMode: 'DRIVING',
-        },
-        (response, status) => {
-            if (status === 'OK') {
-                const distance = response.rows[0].elements[0].distance.value / 1000; // км
-                const cost = Math.ceil(distance * 10); // 10 грн/км
-                
-                document.getElementById("deliveryCost").textContent = cost + " грн";
-                alert(`Відстань: ${distance.toFixed(2)} км\nВартість доставки: ${cost} грн`);
-            } else {
-                alert("Не вдалося обрахувати маршрут");
-            }
+    // Побудова маршруту через Directions API
+    const request = {
+        origin: restaurantLocation,
+        destination: deliveryLocation,
+        travelMode: google.maps.TravelMode.DRIVING,
+        region: 'UA'
+    };
+
+    directionsService.route(request, (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK) {
+            // Відобразити маршрут на карті
+            directionsRenderer.setDirections(result);
+            
+            // Приховати користувацький маркер (бо DirectionsRenderer створює свої)
+            marker.setVisible(false);
+            
+            // Отримати дані про маршрут
+            const route = result.routes[0];
+            const leg = route.legs[0];
+            const distance = leg.distance.value / 1000; // км
+            const duration = leg.duration.text;
+            const cost = Math.ceil(distance * 10); // 10 грн/км
+            
+            document.getElementById("deliveryCost").textContent = cost + " грн";
+            
+            // Оновити інформацію
+            document.getElementById("mapInfo").innerHTML = 
+                `<strong>Маршрут побудовано</strong><br>` +
+                `Відстань: ${distance.toFixed(2)} км<br>` +
+                `Час в дорозі: ${duration}<br>` +
+                `Вартість доставки: ${cost} грн`;
+            
+        } else {
+            alert("Не вдалося побудувати маршрут: " + status);
+            console.error("Directions request failed:", status);
         }
-    );
+    });
 }
 </script>
 
