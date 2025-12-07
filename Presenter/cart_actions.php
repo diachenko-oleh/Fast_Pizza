@@ -62,6 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // DEBUG: логуємо дані форми
     error_log("POST data: " . print_r($_POST, true));
+
+    $payment_method = $_POST['payment'] ?? 'cash';
     
     if (empty($_SESSION['cart'])) {
         echo "<script>alert('Кошик порожній!'); window.location='menu_page.php';</script>";
@@ -169,6 +171,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $receiptResult = $stmtReceipt->fetch(PDO::FETCH_ASSOC);
         $receipt_id = $receiptResult['id'] ?? null;
+
+        $totalAmount = 0;
+
+        foreach ($_SESSION['cart'] as $item) {
+        $totalAmount += $item['price'] * $item['qty'];
+        }
+
+        // Stripe потребує суму в копійках
+        $stripeAmount = $totalAmount * 100;
         
         if (!$receipt_id) {
             throw new Exception('Помилка створення чека');
@@ -201,7 +212,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Підтверджуємо транзакцію
         $pdo->commit();
-        
+        if ($payment_method === 'cash') {
+
+         $_SESSION['cart'] = [];
+
+            echo "<script>
+                alert('Замовлення №$receipt_id успішно оформлено!');
+                localStorage.removeItem('cart');
+                window.location='menu_page.php';
+            </script>";
+            exit;
+        }
         // Очищення кошика
         $_SESSION['cart'] = [];
         
