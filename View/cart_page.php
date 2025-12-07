@@ -3,6 +3,7 @@
 session_start();
 require_once __DIR__ . '/../Model/products.php';
 require_once __DIR__ . '/../Model/auth.php';
+require_once __DIR__ . '/config.php';
 
 // Якщо користувач авторизований, отримаємо його дані для попереднього заповнення форми
 $client = get_current_user_client();
@@ -12,6 +13,172 @@ require_once __DIR__ . '/header.php';
 
 require_once __DIR__ . '/../Presenter/cart_actions.php';
 ?>
+
+<style>
+.payment-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.payment-modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 40px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s;
+}
+
+@keyframes slideDown {
+    from { 
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to { 
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.payment-close {
+    color: #aaa;
+    float: right;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+}
+
+.payment-close:hover {
+    color: #000;
+}
+
+.payment-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.payment-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.payment-amount {
+    font-size: 36px;
+    font-weight: 700;
+    color: #27ae60;
+    margin: 20px 0;
+}
+
+.card-details {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.card-form-group {
+    margin-bottom: 20px;
+}
+
+.card-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.card-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    transition: all 0.3s;
+    font-family: 'Courier New', monospace;
+}
+
+.card-input:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+.card-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 15px;
+}
+
+.payment-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.payment-btn {
+    flex: 1;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.payment-btn-confirm {
+    background: #27ae60;
+    color: white;
+}
+
+.payment-btn-confirm:hover {
+    background: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.payment-btn-cancel {
+    background: #e74c3c;
+    color: white;
+}
+
+.payment-btn-cancel:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.payment-instruction {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+    margin: 20px 0;
+}
+
+.payment-instruction p {
+    margin: 5px 0;
+    color: #856404;
+}
+</style>
 
     <main class="container cart-container">
       <h2 class="mb-4">Замовлення:</h2>
@@ -117,50 +284,34 @@ require_once __DIR__ . '/../Presenter/cart_actions.php';
                 </select>
               </div>
 
-              <!-- Доставка: кнопка для відкриття модального вікна з картою -->
               <div class="form-group" id="deliverySection" style="display: none;">
                 <label class="form-label">Виберіть адресу доставки:</label>
-
                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">
                   Відкрити карту
                 </button>
-
-                <!-- тут буде збережено адресу -->
                 <input type="hidden" id="deliveryAddress" name="address" required>
-
-                <!-- показ обраної адреси -->
                 <div id="selectedAddressDisplay" style="margin-top: 10px; font-weight: bold; color: #666;"></div>
               </div>
 
-              <!-- Модальне вікно з картою -->
               <div class="modal fade" id="mapModal" tabindex="-1">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
                   <div class="modal-content">
-
                     <div class="modal-header">
                       <h5 class="modal-title">Виберіть місце на карті</h5>
                       <button class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-
                     <div class="modal-body">
-                      <input id="addressInput" 
-                             type="text" 
-                             class="form-control mb-3" 
-                             placeholder="Введіть адресу українською">
-
+                      <input id="addressInput" type="text" class="form-control mb-3" placeholder="Введіть адресу українською">
                       <div id="map" style="width: 100%; height: 400px;"></div>
-
                       <div id="mapInfo" class="mt-2" style="font-size: 16px;">
                         Вибране місце: ще не вибрано
                       </div>
                     </div>
-
                     <div class="modal-footer">
                       <button id="confirmAddressBtn" type="button" class="btn btn-primary" disabled>
                         Підтвердити адресу
                       </button>
                     </div>
-
                   </div>
                 </div>
               </div>
@@ -171,25 +322,91 @@ require_once __DIR__ . '/../Presenter/cart_actions.php';
               </div>
 
               <div class="form-total">
-                <strong><?php echo $total; ?> грн</strong>
+                <strong id="totalAmount"><?php echo $total; ?> грн</strong>
               </div>
 
-              <button type="submit" class="submit-btn">Замовити</button>
+              <button type="button" class="submit-btn" onclick="handleOrder()">Замовити</button>
             </form>
           </div>
         </div>
       <?php endif; ?>
     </main>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDe3iJJ1yjlG_VbcjmNpy32wDH6rMteJ0&libraries=places&language=uk&region=UA&callback=initMap" async defer></script>
+<!-- Модальне вікно оплати -->
+<div id="paymentModal" class="payment-modal">
+  <div class="payment-modal-content">
+    <span class="payment-close" onclick="closePaymentModal()">&times;</span>
+    
+    <div class="payment-header">
+      <h2>Оплата карткою</h2>
+      <div class="payment-amount" id="paymentAmount">0 грн</div>
+    </div>
+
+    <form id="cardPaymentForm" onsubmit="return handleCardPayment(event)">
+      <div class="card-form-group">
+        <label class="card-label">Номер картки</label>
+        <input type="text" 
+               id="cardNumber" 
+               class="card-input" 
+               placeholder="1234 5678 9012 3456" 
+               maxlength="19"
+               required
+               oninput="formatCardNumber(this)">
+      </div>
+
+      <div class="card-row">
+        <div class="card-form-group">
+          <label class="card-label">Місяць/Рік</label>
+          <input type="text" 
+                 id="cardExpiry" 
+                 class="card-input" 
+                 placeholder="MM/YY" 
+                 maxlength="5"
+                 required
+                 oninput="formatExpiry(this)">
+        </div>
+
+        <div class="card-form-group">
+          <label class="card-label">CVV</label>
+          <input type="text" 
+                 id="cardCVV" 
+                 class="card-input" 
+                 placeholder="123" 
+                 maxlength="3"
+                 required
+                 oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        </div>
+      </div>
+
+      <div class="card-form-group">
+        <label class="card-label">Поштовий індекс</label>
+        <input type="text" 
+               id="cardZip" 
+               class="card-input" 
+               placeholder="18000" 
+               maxlength="5"
+               required
+               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+      </div>
+
+      <div class="payment-buttons">
+        <button type="submit" class="payment-btn payment-btn-confirm">
+          ✓ Оплатити
+        </button>
+        <button type="button" class="payment-btn payment-btn-cancel" onclick="closePaymentModal()">
+          ✕ Скасувати
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?> &libraries=places&language=uk&region=UA&callback=initMap" async defer></script>
 
 <script>
 let map, marker, selectedAddress = null;
 let autocomplete = null;
 
-// ---------------------------
-// Ініціалізація карти
-// ---------------------------
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     center: { lat: 49.44499, lng: 32.06057 },
@@ -206,10 +423,7 @@ function initMap() {
   marker.addListener("dragend", () => setPositionFromCoords(marker.getPosition()));
 }
 
-// ---------------------------
-// Ініціалізація автокомпліта
-// ---------------------------
-document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
+document.getElementById("mapModal")?.addEventListener("shown.bs.modal", () => {
   setTimeout(() => google.maps.event.trigger(map, "resize"), 100);
 
   if (!autocomplete) {
@@ -245,9 +459,6 @@ document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
   }
 });
 
-// ---------------------------
-// Отримання адреси по координатам
-// ---------------------------
 function setPositionFromCoords(latlng) {
   marker.setPosition(latlng);
 
@@ -288,9 +499,6 @@ function setPositionFromCoords(latlng) {
   );
 }
 
-// ---------------------------
-// Парсер української адреси + ВАЛІДАЦІЯ
-// ---------------------------
 function extractUkrainianAddress(place) {
   if (!place.address_components)
     return { valid: false, fullAddress: place.formatted_address };
@@ -321,10 +529,7 @@ function extractUkrainianAddress(place) {
   };
 }
 
-// ---------------------------
-// Підтвердження адреси
-// ---------------------------
-document.getElementById("confirmAddressBtn").addEventListener("click", () => {
+document.getElementById("confirmAddressBtn")?.addEventListener("click", () => {
   if (!selectedAddress || !selectedAddress.valid) return;
 
   document.getElementById("deliveryAddress").value = JSON.stringify({
@@ -339,24 +544,19 @@ document.getElementById("confirmAddressBtn").addEventListener("click", () => {
   bootstrap.Modal.getInstance(document.getElementById("mapModal")).hide();
 });
 
-// ---------------------------
-// Фікс ресайзу карти
-// ---------------------------
-document.getElementById("mapModal").addEventListener("shown.bs.modal", () => {
+document.getElementById("mapModal")?.addEventListener("shown.bs.modal", () => {
   setTimeout(() => {
     google.maps.event.trigger(map, "resize");
     map.setCenter({ lat: 49.44499, lng: 32.06057 });
   }, 200);
 });
 
-// ЗМІНА КІЛЬКОСТІ ТОВАРУ В КОШИКУ
 function changeQty(btn, action) {
   const key = btn.getAttribute('data-key');
   const row = btn.closest('.cart-item');
   const input = row.querySelector('.qty-input');
   let newQty = parseInt(input.value);
 
-  // Змінюємо кількість
   if (action === 'inc') {
     newQty++;
   } else if (action === 'dec' && newQty > 1) {
@@ -387,21 +587,18 @@ function changeQty(btn, action) {
     if (!data.success) console.error('Server error (qty update):', data);
   })
   .catch(err => {
-    console.error('Ошибка при синхронизации с сервером:', err);
+    console.error('Помилка синхронізації:', err);
   });
 }
 
-// ВИДАЛЕННЯ ТОВАРУ З КОШИКА
 function removeItem(btn) {
   const key = btn.getAttribute('data-key');
   const row = btn.closest('.cart-item');
 
   row.remove();
-
   updateTotalPrice();
   saveCartToLocalStorage();
 
-  // Синхронізація з сервером
   fetch('../Presenter/cart_actions.php?remove=' + encodeURIComponent(key), {
     method: 'GET',
     credentials: 'same-origin',
@@ -412,10 +609,8 @@ function removeItem(btn) {
   })
   .then(r => r.json())
   .then(data => {
-    console.log('remove response', data);
     if (!data.success) {
       console.error('Server error (remove):', data);
-      // Відновлюємо товар у разі помилки
       if (row && !document.querySelector('.cart-table tbody').contains(row)) {
         document.querySelector('.cart-table tbody').appendChild(row);
         updateTotalPrice();
@@ -424,11 +619,10 @@ function removeItem(btn) {
     }
   })
   .catch(err => {
-    console.error('Ошибка при синхронизации с сервером:', err);
+    console.error('Помилка синхронізації:', err);
   });
 }
 
-// ОНОВЛЕННЯ ЗАГАЛЬНОЇ СУМИ ЗАМОВЛЕННЯ
 function updateTotalPrice() {
   let total = 0;
   document.querySelectorAll('.cart-item').forEach(row => {
@@ -442,7 +636,6 @@ function updateTotalPrice() {
   }
 }
 
-// ЗБЕРЕЖЕННЯ КОШИКА В LOCALSTORAGE
 function saveCartToLocalStorage() {
   const cart = {};
   document.querySelectorAll('.cart-item').forEach(row => {
@@ -457,94 +650,7 @@ function saveCartToLocalStorage() {
   });
   localStorage.setItem('cart', JSON.stringify(cart));
 }
-<?php
-require __DIR__ . '/../Model/db.php'; // подключение PDO
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    if (empty($_SESSION['cart'])) {
-        echo "<script>alert('Кошик порожній!');</script>";
-        exit;
-    }
-
-    $name = trim($_POST['name']);
-    $phone = trim($_POST['phone']);
-    $payment = $_POST['payment'];
-    $delivery_method = $_POST['delivery_method'];
-    $delivery_time = $_POST['delivery_time'];
-    $comments = $_POST['comments'] ?? '';
-
-    // ---------------------------------------
-    // 1. Если клиент авторизован — берем ID
-    // ---------------------------------------
-    $client = get_current_user_client();
-    if (!$client) {
-        echo "<script>alert('Авторизуйтесь перед замовленням');</script>";
-        exit;
-    }
-    $client_id = $client['id'];
-
-    // ---------------------------------------
-    // 2. Адреса (самовывоз / доставка)
-    // ---------------------------------------
-    $address_id = null;
-
-    if ($delivery_method === "self") {
-        // адреса самовывоза — обычная строка
-        $addr = explode(",", $_POST['address']);
-        $street = trim($addr[0]);
-        $house = trim($addr[1] ?? '');
-        $city = "Черкаси";
-
-        $q = $pdo->prepare("INSERT INTO addresses(street, house_number, city) VALUES (?,?,?) RETURNING id");
-        $q->execute([$street, $house, $city]);
-        $address_id = $q->fetchColumn();
-
-    } else {
-        // доставка — JSON
-        $json = json_decode($_POST['address'], true);
-
-        $q = $pdo->prepare("INSERT INTO addresses(street, house_number, city) VALUES (?,?,?) RETURNING id");
-        $q->execute([$json['street'], $json['house_number'], $json['city']]);
-        $address_id = $q->fetchColumn();
-    }
-
-    // ---------------------------------------
-    // 3. Создаем новый чек (receipt)
-    // ---------------------------------------
-    // курьера пока ставим 1
-    $courier_id = 1;
-
-    $q = $pdo->prepare("
-        INSERT INTO receipt (client_id, address_id, date_time, courier_id)
-        VALUES (?, ?, NOW(), ?)
-        RETURNING id
-    ");
-    $q->execute([$client_id, $address_id, $courier_id]);
-    $receipt_id = $q->fetchColumn();
-
-    // ---------------------------------------
-    // 4. Создаем записи orders
-    // ---------------------------------------
-    foreach ($_SESSION['cart'] as $item) {
-        $product_id = $item['id'];  // ОБЯЗАТЕЛЬНО ДОБАВЬ id продукта в корзину!
-        $qty = (int)$item['qty'];
-
-        $q = $pdo->prepare("
-            INSERT INTO orders (receipt_id, product_id, quantity)
-            VALUES (?, ?, ?)
-        ");
-        $q->execute([$receipt_id, $product_id, $qty]);
-    }
-
-    // ---------------------------------------
-    // 5. Очищаем корзину
-    // ---------------------------------------
-    $_SESSION['cart'] = [];
-
-    echo "<script>alert('Замовлення успішно оформлено!'); window.location='menu_page.php';</script>";
-}
-?>
 function toggleDeliveryUI() {
   const method = document.querySelector('input[name="delivery_method"]:checked')?.value;
   const selfPickupSection = document.getElementById('selfPickupSection');
@@ -553,75 +659,120 @@ function toggleDeliveryUI() {
   const deliveryAddress = document.getElementById('deliveryAddress');
 
   if (method === 'self') {
-    // Показуємо вибір адреси закладу
     selfPickupSection.style.display = 'block';
     deliverySection.style.display = 'none';
     addressSelect.required = true;
-    addressSelect.disabled = false; // Активуємо select
+    addressSelect.disabled = false;
     deliveryAddress.required = false;
-    deliveryAddress.disabled = true; // Деактивуємо hidden input
+    deliveryAddress.disabled = true;
     deliveryAddress.removeAttribute('required');
   } else if (method === 'delivery') {
-    // Показуємо вибір адреси доставки на карті
     selfPickupSection.style.display = 'none';
     deliverySection.style.display = 'block';
     addressSelect.required = false;
-    addressSelect.disabled = true; // Деактивуємо select
+    addressSelect.disabled = true;
     addressSelect.removeAttribute('required');
     deliveryAddress.required = true;
-    deliveryAddress.disabled = false; // Активуємо hidden input
+    deliveryAddress.disabled = false;
   }
 }
 
-//Перевіряє заповнення всіх обов'язкових полів форми замовлення
-document.getElementById('orderForm')?.addEventListener('submit', function(e) {
-  const name = document.querySelector('input[name="name"]').value.trim();
-  const phone = document.querySelector('input[name="phone"]').value.trim();
-  const payment = document.querySelector('input[name="payment"]:checked');
-  const deliveryTime = document.querySelector('input[name="delivery_time"]:checked');
-  const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-  const method = deliveryMethod?.value;
+// Обробка замовлення
+function handleOrder() {
+  const form = document.getElementById('orderForm');
   
-  // Перевірка імені
-  if (!name) {
-    e.preventDefault();
-    alert('Будь ласка, введіть ваше ім\'я');
-    return false;
+  // Перевірка валідації форми
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
   }
   
-  // Перевірка телефону
-  if (!phone) {
-    e.preventDefault();
-    alert('Будь ласка, введіть ваш телефон');
-    return false;
+  const payment = document.querySelector('input[name="payment"]:checked')?.value;
+  
+  if (!payment) {
+    alert('Будь ласка, оберіть спосіб оплати');
+    return;
   }
   
-  // Перевірка вибору всіх радіо-кнопок
-  if (!payment || !deliveryMethod) {
-    e.preventDefault();
-    alert('Будь ласка, виберіть всі обов\'язкові пункти (оплата, спосіб отримання)');
-    return false;
+  if (payment === 'cash') {
+    // Готівка - відразу відправляємо форму
+    form.submit();
+  } else if (payment === 'card') {
+    // Оплата на карту - показуємо модальне вікно
+    const totalText = document.getElementById('totalAmount').textContent;
+    document.getElementById('paymentAmount').textContent = totalText;
+    document.getElementById('paymentModal').style.display = 'block';
   }
+}
 
-  // Перевірка адреси залежно від способу отримання
-  if (method === 'self') {
-    const addressSelect = document.getElementById('addressSelect');
-    if (!addressSelect.value) {
-      e.preventDefault();
-      alert('Будь ласка, оберіть адресу закладу');
-      return false;
-    }
-  } else if (method === 'delivery') {
-    const deliveryAddress = document.getElementById('deliveryAddress');
-    if (!deliveryAddress.value) {
-      e.preventDefault();
-      alert('Будь ласка, оберіть адресу доставки на карті');
-      return false;
-    }
+// Закриття модального вікна оплати
+function closePaymentModal() {
+  document.getElementById('paymentModal').style.display = 'none';
+}
+
+// Форматування номера картки
+function formatCardNumber(input) {
+  let value = input.value.replace(/\s/g, '').replace(/[^0-9]/g, '');
+  let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+  input.value = formattedValue;
+}
+
+// Форматування місяць/рік
+function formatExpiry(input) {
+  let value = input.value.replace(/\D/g, '');
+  if (value.length >= 2) {
+    value = value.slice(0, 2) + '/' + value.slice(2, 4);
+  }
+  input.value = value;
+}
+
+// Обробка оплати карткою
+function handleCardPayment(event) {
+  event.preventDefault();
+  
+  const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+  const expiry = document.getElementById('cardExpiry').value;
+  const cvv = document.getElementById('cardCVV').value;
+  const zip = document.getElementById('cardZip').value;
+  
+  // Валідація номера картки (16 цифр)
+  if (cardNumber.length !== 16) {
+    alert('Введіть коректний номер картки (16 цифр)');
+    return false;
   }
   
-  return true;
-});
+  // Валідація expiry (MM/YY)
+  if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+    alert('Введіть коректну дату у форматі MM/YY');
+    return false;
+  }
+  
+  // Валідація CVV (3 цифри)
+  if (cvv.length !== 3) {
+    alert('Введіть коректний CVV код (3 цифри)');
+    return false;
+  }
+  
+  // Валідація індексу (5 цифр)
+  if (zip.length !== 5) {
+    alert('Введіть коректний поштовий індекс (5 цифр)');
+    return false;
+  }
+  
+  // Якщо все ок - закриваємо модальне вікно і відправляємо форму
+  closePaymentModal();
+  document.getElementById('orderForm').submit();
+  
+  return false;
+}
+
+// Закриття модального вікна при кліку поза ним
+window.onclick = function(event) {
+  const modal = document.getElementById('paymentModal');
+  if (event.target == modal) {
+    closePaymentModal();
+  }
+}
 </script>
 
 <?php require __DIR__ . '/footer.php'; ?>
