@@ -405,6 +405,8 @@ require_once __DIR__ . '/../Presenter/cart_actions.php';
 
 <script>
 let map, marker, selectedAddress = null;
+// Billing id from server (empty string if none) — used to open payment for existing Stripe customer
+const clientBillingId = '<?php echo addslashes($client['billing_id'] ?? ''); ?>';
 let autocomplete = null;
 
 function initMap() {
@@ -698,7 +700,47 @@ function handleOrder() {
     // Готівка - відразу відправляємо форму
     form.submit();
   } else if (payment === 'card') {
-    // Оплата на карту - показуємо модальне вікно
+    // If the logged-in client has a stored Stripe customer id (billing_id),
+    // open the existing-customer payment flow in a popup by POSTing to
+    // `create_payment_existing.php` with `customer_id` and `amount`.
+    if (clientBillingId && clientBillingId.length > 0) {
+      // Ensure payment radio is set to card so server knows to attempt card flow
+      var paymentRadio = document.querySelector('input[name="payment"][value="card"]');
+      if (paymentRadio) paymentRadio.checked = true;
+
+      // Read numeric total (remove currency text)
+      const totalText = document.getElementById('totalAmount').textContent || '0';
+      const totalValue = parseFloat(totalText.replace(/[^0-9\.]/g, '')) || 0;
+      const amount = Math.round(totalValue);
+
+      // Open popup first to avoid popup blockers
+      const wnd = window.open('', 'stripe_existing_payment', 'width=600,height=800');
+
+      // Create a form to POST to create_payment_existing.php
+      const payForm = document.createElement('form');
+      payForm.method = 'POST';
+      payForm.action = '../create_payment_existing.php';
+      payForm.target = 'stripe_existing_payment';
+
+      const inputCustomer = document.createElement('input');
+      inputCustomer.type = 'hidden';
+      inputCustomer.name = 'customer_id';
+      inputCustomer.value = clientBillingId;
+      payForm.appendChild(inputCustomer);
+
+      const inputAmount = document.createElement('input');
+      inputAmount.type = 'hidden';
+      inputAmount.name = 'amount';
+      inputAmount.value = amount;
+      payForm.appendChild(inputAmount);
+
+      document.body.appendChild(payForm);
+      payForm.submit();
+      setTimeout(() => { document.body.removeChild(payForm); }, 1500);
+      return;
+    }
+
+    // Otherwise show the card modal as a fallback (user will enter card details)
     const totalText = document.getElementById('totalAmount').textContent;
     document.getElementById('paymentAmount').textContent = totalText;
     document.getElementById('paymentModal').style.display = 'block';

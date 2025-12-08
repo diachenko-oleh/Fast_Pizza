@@ -14,9 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'name' => $name,
             'email' => $email,
         ]);
-        echo "<h3>Клієнт успішно створений!</h3>";
+        
         echo "ID клієнта Stripe: " . $customer->id . "<br>";
-        echo "<a href='add_customer.php'>Додати ще одного клієнта</a>";
+        
     } catch (\Stripe\Exception\ApiErrorException $e) {
         echo "Помилка при створенні клієнта: " . $e->getMessage();
     }

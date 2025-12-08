@@ -177,10 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($_SESSION['cart'] as $item) {
         $totalAmount += $item['price'] * $item['qty'];
         }
-
-        // Stripe потребує суму в копійках
-        $stripeAmount = $totalAmount * 100;
-        
+         
         if (!$receipt_id) {
             throw new Exception('Помилка створення чека');
         }
