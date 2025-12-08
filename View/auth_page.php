@@ -74,7 +74,7 @@ if (isset($_SESSION['success'])) {
                             </div>
 
                             <div class="mb-3">
-                                <label for="reg_email" class="form-label">Email (необов'язково)</label>
+                                <label for="reg_email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="reg_email" name="email" placeholder="your@email.com">
                             </div>
 
