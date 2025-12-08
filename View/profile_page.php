@@ -58,7 +58,7 @@ unset($_SESSION['success'], $_SESSION['error']);
                         </div>
 
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email (необов'язково)</label>
+                            <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" 
                                    value="<?php echo htmlspecialchars($client['email'] ?? ''); ?>" placeholder="your@email.com">
                         </div>

@@ -4,44 +4,102 @@ require __DIR__ . '/header.php';
 require_once __DIR__ . '/config.php';
 ?>
 
+<style>
+    /* Додаткові стилі для вирівнювання по макету */
+    .layout-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .info-box {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border: 1px solid #e0e0e0;
+    }
+
+    .map-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .cost-footer {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        text-align: left;
+        font-size: 1.2rem;
+        border: 1px solid #ddd;
+    }
+
+    .cost-value {
+        font-weight: 700;
+        color: #333;
+        font-size: 1.4rem;
+    }
+    
+    /* Адаптація існуючих класів під нову структуру */
+    .delivery-title { margin-bottom: 0; }
+    .tariff-text { font-size: 1.1rem; color: #555; }
+</style>
+
 <main class="delivery-container">
-    <div class="delivery-header">
-        <h1 class="delivery-title">Самовивіз - безкоштовно</h1>
-        <h2 class="delivery-subtitle">Вартість доставки по обраному маршруту: <span style="color: #333; font-weight: 700;" id="deliveryCost">0 грн</span></h2>
-        <div class="info-badge">Доставка тільки в межах м. Черкаси</div>
-        <label class="control-label">Оберіть адресу доставки на мапі:</label>
-    </div>
-
-    <div class="map-container">
-        <div id="deliveryMap"></div>
-    </div>
-
-    <div class="delivery-controls">
-        <div class="control-group">
-            <label class="control-label">Оберіть заклад для самовивозу:</label>
-            <select class="custom-select" id="restaurantSelect" onchange="selectRestaurant()">
-                <option value="">-- Оберіть адресу --</option>
-                <option value="49.4383,32.0594">бульвар Шевченка, 60, Черкаси</option>
-                <option value="49.4450,32.0606">бульвар Шевченка, 150, Черкаси</option>
-                <option value="49.4520,32.0618">бульвар Шевченка, 210, Черкаси</option>
-            </select>
+    <div class="layout-stack">
+        
+        <div class="info-box">
+            <h1 class="delivery-title">Самовивіз - безкоштовно</h1>
         </div>
 
-        <div class="control-group">
-            <label class="control-label">Або введіть адресу доставки:</label>
-            <input type="text" id="addressInput" class="address-input" placeholder="Введіть адресу українською">
-            <div class="map-info" id="mapInfo">
-                Клікніть на карту або перетягніть маркер для вибору адреси
+        <div class="info-box">
+            <div class="tariff-text">
+                Доставка — <strong>5 грн/км</strong>
             </div>
         </div>
-    </div>
 
-    <button class="calculate-route-btn" onclick="calculateRoute()">
-       Побудувати маршрут
-    </button>
+        <div>
+            <div class="map-labels">
+                <span>Оберіть адресу:</span>
+                <span class="info-badge" style="margin:0;">в межах м. Черкаси</span>
+            </div>
+            
+            <div class="map-container">
+                <div id="deliveryMap" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+            </div>
+        </div>
 
-    <div class="tariff-info">
-        Тариф доставки: <strong>10 грн/км</strong>
+        <div class="delivery-controls">
+            <div class="control-group">
+                <label class="control-label">Оберіть заклад для самовивозу:</label>
+                <select class="custom-select" id="restaurantSelect" onchange="selectRestaurant()">
+                    <option value="">-- Оберіть адресу --</option>
+                    <option value="49.4383,32.0594">бульвар Шевченка, 60, Черкаси</option>
+                    <option value="49.4450,32.0606">бульвар Шевченка, 150, Черкаси</option>
+                    <option value="49.4520,32.0618">бульвар Шевченка, 210, Черкаси</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Або введіть адресу доставки:</label>
+                <input type="text" id="addressInput" class="address-input" placeholder="Введіть адресу українською">
+                <div class="map-info" id="mapInfo" style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                    Клікніть на карту або перетягніть маркер для вибору адреси
+                </div>
+            </div>
+        </div>
+
+        <div class="cost-footer">
+            Вартість доставки: <span id="deliveryCost" class="cost-value">0 грн</span>
+        </div>
+
     </div>
 </main>
 
@@ -73,7 +131,7 @@ function initDeliveryMap() {
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer({
         map: map,
-        suppressMarkers: false, // Показувати маркери початку/кінця
+        suppressMarkers: false, 
         polylineOptions: {
             strokeColor: '#FF6B35',
             strokeWeight: 5,
@@ -178,7 +236,6 @@ function selectRestaurant() {
     
     if (!value) {
         restaurantLocation = null;
-        // Очистити маршрут
         if (directionsRenderer) {
             directionsRenderer.setDirections({routes: []});
         }
@@ -211,7 +268,6 @@ function calculateRoute() {
         return;
     }
 
-    // Побудова маршруту через Directions API
     const request = {
         origin: restaurantLocation,
         destination: deliveryLocation,
@@ -221,31 +277,25 @@ function calculateRoute() {
 
     directionsService.route(request, (result, status) => {
         if (status === google.maps.DirectionsStatus.OK) {
-            // Відобразити маршрут на карті
             directionsRenderer.setDirections(result);
-            
-            // Приховати користувацький маркер (бо DirectionsRenderer створює свої)
             marker.setVisible(false);
             
-            // Отримати дані про маршрут
             const route = result.routes[0];
             const leg = route.legs[0];
-            const distance = leg.distance.value / 1000; // км
+            const distance = leg.distance.value / 1000; 
             const duration = leg.duration.text;
-            const cost = Math.ceil(distance * 10); // 10 грн/км
+            const cost = Math.ceil(distance * 5); 
             
+            // Оновлюємо вартість в нижньому блоці
             document.getElementById("deliveryCost").textContent = cost + " грн";
             
-            // Оновити інформацію
             document.getElementById("mapInfo").innerHTML = 
                 `<strong>Маршрут побудовано</strong><br>` +
                 `Відстань: ${distance.toFixed(2)} км<br>` +
-                `Час в дорозі: ${duration}<br>` +
-                `Вартість доставки: ${cost} грн`;
+                `Час в дорозі: ${duration}`;
             
         } else {
             alert("Не вдалося побудувати маршрут: " + status);
-            console.error("Directions request failed:", status);
         }
     });
 }
