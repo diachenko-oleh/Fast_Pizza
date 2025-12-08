@@ -332,82 +332,21 @@ require_once __DIR__ . '/../Presenter/cart_actions.php';
       <?php endif; ?>
     </main>
 
-<!-- Модальне вікно оплати -->
-<div id="paymentModal" class="payment-modal">
-  <div class="payment-modal-content">
-    <span class="payment-close" onclick="closePaymentModal()">&times;</span>
-    
-    <div class="payment-header">
-      <h2>Оплата карткою</h2>
-      <div class="payment-amount" id="paymentAmount">0 грн</div>
-    </div>
-
-    <form id="cardPaymentForm" onsubmit="return handleCardPayment(event)">
-      <div class="card-form-group">
-        <label class="card-label">Номер картки</label>
-        <input type="text" 
-               id="cardNumber" 
-               class="card-input" 
-               placeholder="1234 5678 9012 3456" 
-               maxlength="19"
-               required
-               oninput="formatCardNumber(this)">
-      </div>
-
-      <div class="card-row">
-        <div class="card-form-group">
-          <label class="card-label">Місяць/Рік</label>
-          <input type="text" 
-                 id="cardExpiry" 
-                 class="card-input" 
-                 placeholder="MM/YY" 
-                 maxlength="5"
-                 required
-                 oninput="formatExpiry(this)">
-        </div>
-
-        <div class="card-form-group">
-          <label class="card-label">CVV</label>
-          <input type="text" 
-                 id="cardCVV" 
-                 class="card-input" 
-                 placeholder="123" 
-                 maxlength="3"
-                 required
-                 oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-        </div>
-      </div>
-
-      <div class="card-form-group">
-        <label class="card-label">Поштовий індекс</label>
-        <input type="text" 
-               id="cardZip" 
-               class="card-input" 
-               placeholder="18000" 
-               maxlength="5"
-               required
-               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-      </div>
-
-      <div class="payment-buttons">
-        <button type="submit" class="payment-btn payment-btn-confirm">
-          ✓ Оплатити
-        </button>
-        <button type="button" class="payment-btn payment-btn-cancel" onclick="closePaymentModal()">
-          ✕ Скасувати
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?> &libraries=places&language=uk&region=UA&callback=initMap" async defer></script>
 
 <script>
 let map, marker, selectedAddress = null;
-// Billing id from server (empty string if none) — used to open payment for existing Stripe customer
 const clientBillingId = '<?php echo addslashes($client['billing_id'] ?? ''); ?>';
 let autocomplete = null;
+let deliveryCost = 0;
+const baseTotal = <?php echo $total; ?>; // Базова сума замовлення
+
+// Координати пунктів видачі
+const pickupPoints = [
+  { address: "бульвар Шевченка, 60, Черкаси", lat: 49.4445, lng: 32.0606 },
+  { address: "бульвар Шевченка, 150, Черкаси", lat: 49.4425, lng: 32.0580 },
+  { address: "бульвар Шевченка, 210, Черкаси", lat: 49.4405, lng: 32.0555 }
+];
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
@@ -455,8 +394,18 @@ document.getElementById("mapModal")?.addEventListener("shown.bs.modal", () => {
       }
 
       selectedAddress = parsed;
-      document.getElementById("mapInfo").textContent = "Вибране місце: " + parsed.fullAddress;
-      document.getElementById("confirmAddressBtn").disabled = false;
+      
+      // Перевірка міста
+      const cityNormalized = parsed.city.toLowerCase().trim();
+      if (cityNormalized !== "черкаси" && cityNormalized !== "м. черкаси") {
+        selectedAddress = null;
+        document.getElementById("mapInfo").textContent = "Доставка доступна тільки в межах м. Черкаси.";
+        document.getElementById("confirmAddressBtn").disabled = true;
+        return;
+      }
+      
+      // Розрахунок вартості доставки
+      calculateDeliveryCost(place.geometry.location);
     });
   }
 });
@@ -490,8 +439,8 @@ function setPositionFromCoords(latlng) {
         }
 
         selectedAddress = parsed;
-        info.textContent = "Вибране місце: " + parsed.fullAddress;
-        confirmBtn.disabled = false;
+        // Розрахунок вартості доставки
+        calculateDeliveryCost(latlng);
       } else {
         selectedAddress = null;
         info.textContent = "Не вдалося визначити адресу";
@@ -499,6 +448,77 @@ function setPositionFromCoords(latlng) {
       }
     }
   );
+}
+
+// Розрахунок вартості доставки
+function calculateDeliveryCost(destinationLatLng) {
+  const service = new google.maps.DistanceMatrixService();
+  const origins = pickupPoints.map(point => new google.maps.LatLng(point.lat, point.lng));
+  
+  service.getDistanceMatrix(
+    {
+      origins: origins,
+      destinations: [destinationLatLng],
+      travelMode: 'DRIVING',
+      unitSystem: google.maps.UnitSystem.METRIC,
+    },
+    (response, status) => {
+      if (status === 'OK') {
+        let shortestDistance = Infinity;
+        let closestPoint = null;
+
+        response.rows.forEach((row, index) => {
+          const element = row.elements[0];
+          if (element.status === 'OK') {
+            const distanceInMeters = element.distance.value;
+            if (distanceInMeters < shortestDistance) {
+              shortestDistance = distanceInMeters;
+              closestPoint = pickupPoints[index];
+            }
+          }
+        });
+
+        if (closestPoint) {
+          const distanceInKm = (shortestDistance / 1000).toFixed(2);
+          deliveryCost = Math.round(distanceInKm * 10); // 10 грн/км
+          
+          const info = document.getElementById("mapInfo");
+          info.innerHTML = `
+            <strong>Вибране місце:</strong> ${selectedAddress.fullAddress}<br>
+            <strong>Найближчий пункт:</strong> ${closestPoint.address}<br>
+            <strong>Відстань:</strong> ${distanceInKm} км<br>
+            <strong>Вартість доставки:</strong> ${deliveryCost} грн
+          `;
+          
+          document.getElementById("confirmAddressBtn").disabled = false;
+        }
+      } else {
+        console.error('Distance Matrix request failed:', status);
+        document.getElementById("mapInfo").textContent = "Не вдалося розрахувати відстань";
+        document.getElementById("confirmAddressBtn").disabled = true;
+      }
+    }
+  );
+}
+
+// Оновлення загальної суми з доставкою
+function updateTotalWithDelivery() {
+  const totalAmount = baseTotal + deliveryCost;
+  const totalElement = document.getElementById("totalAmount");
+  if (totalElement) {
+    totalElement.textContent = totalAmount + " грн";
+  }
+  
+  // Додаємо приховане поле для передачі вартості доставки
+  let deliveryCostInput = document.getElementById("deliveryCostInput");
+  if (!deliveryCostInput) {
+    deliveryCostInput = document.createElement("input");
+    deliveryCostInput.type = "hidden";
+    deliveryCostInput.id = "deliveryCostInput";
+    deliveryCostInput.name = "delivery_cost";
+    document.getElementById("orderForm").appendChild(deliveryCostInput);
+  }
+  deliveryCostInput.value = deliveryCost;
 }
 
 function extractUkrainianAddress(place) {
@@ -537,11 +557,17 @@ document.getElementById("confirmAddressBtn")?.addEventListener("click", () => {
   document.getElementById("deliveryAddress").value = JSON.stringify({
     street: selectedAddress.street,
     house_number: selectedAddress.number,
-    city: selectedAddress.city
+    city: selectedAddress.city,
+    delivery_cost: deliveryCost
   });
 
-  document.getElementById("selectedAddressDisplay").textContent =
-    selectedAddress.fullAddress;
+  document.getElementById("selectedAddressDisplay").innerHTML = `
+    ${selectedAddress.fullAddress}<br>
+    <span style="color: #28a745;">Вартість доставки: ${deliveryCost} грн</span>
+  `;
+
+  // Оновлюємо загальну суму після підтвердження адреси
+  updateTotalWithDelivery();
 
   bootstrap.Modal.getInstance(document.getElementById("mapModal")).hide();
 });
@@ -634,7 +660,7 @@ function updateTotalPrice() {
   });
   const totalElement = document.querySelector('.form-total strong');
   if (totalElement) {
-    totalElement.textContent = total + ' грн';
+    totalElement.textContent = (total + deliveryCost) + ' грн';
   }
 }
 
@@ -668,6 +694,10 @@ function toggleDeliveryUI() {
     deliveryAddress.required = false;
     deliveryAddress.disabled = true;
     deliveryAddress.removeAttribute('required');
+    
+    // Скидаємо вартість доставки при самовивозі
+    deliveryCost = 0;
+    updateTotalPrice();
   } else if (method === 'delivery') {
     selfPickupSection.style.display = 'none';
     deliverySection.style.display = 'block';
@@ -714,7 +744,7 @@ function handleOrder() {
       const amount = Math.round(totalValue);
 
       // Open popup first to avoid popup blockers
-      const wnd = window.open('', 'stripe_existing_payment', 'width=600,height=800');
+      const wnd = window.open('', 'stripe_existing_payment', 'width=600,height=600');
 
       // Create a form to POST to create_payment_existing.php
       const payForm = document.createElement('form');

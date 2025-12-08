@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // 2. Створення чека з коментарем
-        $courier_id = 1; // Тимчасовий курʼєр
+        $courier_id = null; // нулл тому що кур'єр буде призначений пізніше
         
         $stmtReceipt = $pdo->prepare("
             INSERT INTO receipt (client_id, address_id, date_time, courier_id, comment)
