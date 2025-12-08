@@ -41,6 +41,7 @@ $msg = $_GET['msg'] ?? '';
 			<p>Додавати або редагувати товари можна на сторінці редагування товарів.</p>
 			<a href="admin_edit_page.php" class="btn btn-primary">Перейти до товарів</a>
 			<a href="admin_orders.php" class="btn btn-warning">Переглянути замовлення</a>
+			<a href="admin_courier.php" class="btn btn-info text-white">Керування кур'єрами</a>
 		</section>
 	</div>
 </main>
