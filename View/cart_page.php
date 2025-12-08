@@ -503,10 +503,16 @@ function calculateDeliveryCost(destinationLatLng) {
 
 // Оновлення загальної суми з доставкою
 function updateTotalWithDelivery() {
-  const totalAmount = baseTotal + deliveryCost;
+  let total = 0;
+  document.querySelectorAll('.cart-item').forEach(row => {
+    const totalText = row.querySelector('.item-total strong').textContent;
+    const subtotal = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+    total += subtotal;
+  });
+  
   const totalElement = document.getElementById("totalAmount");
   if (totalElement) {
-    totalElement.textContent = totalAmount + " грн";
+    totalElement.textContent = (total + deliveryCost) + " грн";
   }
   
   // Додаємо приховане поле для передачі вартості доставки
@@ -567,7 +573,7 @@ document.getElementById("confirmAddressBtn")?.addEventListener("click", () => {
   `;
 
   // Оновлюємо загальну суму після підтвердження адреси
-  updateTotalWithDelivery();
+  updateTotalPrice();
 
   bootstrap.Modal.getInstance(document.getElementById("mapModal")).hide();
 });
@@ -698,6 +704,12 @@ function toggleDeliveryUI() {
     // Скидаємо вартість доставки при самовивозі
     deliveryCost = 0;
     updateTotalPrice();
+    
+    // Очищаємо відображення адреси доставки
+    const displayElement = document.getElementById('selectedAddressDisplay');
+    if (displayElement) {
+      displayElement.innerHTML = '';
+    }
   } else if (method === 'delivery') {
     selfPickupSection.style.display = 'none';
     deliverySection.style.display = 'block';
@@ -706,6 +718,19 @@ function toggleDeliveryUI() {
     addressSelect.removeAttribute('required');
     deliveryAddress.required = true;
     deliveryAddress.disabled = false;
+    
+    // Якщо адреса вже була вибрана раніше, відновлюємо вартість доставки
+    if (deliveryAddress.value) {
+      try {
+        const addressData = JSON.parse(deliveryAddress.value);
+        if (addressData.delivery_cost) {
+          deliveryCost = addressData.delivery_cost;
+          updateTotalPrice();
+        }
+      } catch (e) {
+        console.log('Не вдалося відновити вартість доставки');
+      }
+    }
   }
 }
 
@@ -744,7 +769,7 @@ function handleOrder() {
       const amount = Math.round(totalValue);
 
       // Open popup first to avoid popup blockers
-      const wnd = window.open('', 'stripe_existing_payment', 'width=600,height=600');
+      const wnd = window.open('', 'stripe_existing_payment', 'width=600,height=800');
 
       // Create a form to POST to create_payment_existing.php
       const payForm = document.createElement('form');
