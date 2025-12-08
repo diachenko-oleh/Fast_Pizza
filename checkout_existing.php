@@ -19,11 +19,11 @@ if (!$clientSecret) die("Client secret missing");
 </head>
 <body>
 
-<h3>Оплата через существующего Customer</h3>
+<h3>Введіть дані для оплати: [номер карти] [термін придатності] [CVC] [поштовий індекс]</h3>
 
 <form id="payment-form">
     <div id="card-element"></div>
-    <button type="submit">Оплатить</button>
+    <button type="submit">Оплатити</button>
 </form>
 
 <script>
@@ -45,7 +45,7 @@ document.getElementById("payment-form").addEventListener("submit", async (e) => 
     if (error) {
         alert("Ошибка оплаты: " + error.message);
     } else {
-        window.location.href = "/View/menu_page.php";
+        window.close();
     }
 });
 </script>
