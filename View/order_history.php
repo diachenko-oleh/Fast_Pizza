@@ -14,6 +14,52 @@ if (!isset($_SESSION['client_id'])) {
 
 $client_id = $_SESSION['client_id'];
 
+// Обработка сохранения отзыва
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_review') {
+    $receiptId = intval($_POST['receipt_id'] ?? 0);
+    $rating = trim($_POST['rating'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    // basic validation: require receipt id and either a numeric rating or a non-empty description
+    if ($receiptId > 0 && (is_numeric($rating) || $description !== '')) {
+        $ratingVal = is_numeric($rating) ? floatval($rating) : null;
+        if (is_numeric($ratingVal)) {
+            if ($ratingVal < 0) $ratingVal = 0;
+            if ($ratingVal > 5) $ratingVal = 5;
+        }
+
+        try {
+            // ensure receipt belongs to current client
+            $chk = $pdo->prepare("SELECT id FROM receipt WHERE id = :rid AND client_id = :cid LIMIT 1");
+            $chk->execute([':rid' => $receiptId, ':cid' => $client_id]);
+            if ($chk->fetch()) {
+                // Use explicit SELECT then INSERT or UPDATE to avoid requiring a unique constraint
+                $sel = $pdo->prepare("SELECT id FROM review WHERE receipt_id = :rid AND client_id = :cid LIMIT 1");
+                $sel->execute([':rid' => $receiptId, ':cid' => $client_id]);
+                $exists = (bool) $sel->fetchColumn();
+
+                if ($exists) {
+                    // Do not allow editing existing reviews
+                    $_SESSION['review_message'] = 'Відгук вже існує і не може бути змінений';
+                } else {
+                    $ins = $pdo->prepare("INSERT INTO review (client_id, receipt_id, rating, description) VALUES (:cid, :rid, :rating, :desc)");
+                    $ins->execute([':cid' => $client_id, ':rid' => $receiptId, ':rating' => $ratingVal, ':desc' => $description]);
+                    $_SESSION['review_message'] = 'Відгук збережено';
+                }
+            } else {
+                $_SESSION['review_message'] = 'Чек не знайдено або недоступний';
+            }
+        } catch (Exception $e) {
+            error_log('Failed to save review: ' . $e->getMessage());
+            $_SESSION['review_message'] = 'Помилка при збереженні відгуку';
+        }
+    } else {
+        $_SESSION['review_message'] = 'Потрібно вказати рейтинг або коментар';
+    }
+
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
 // Отримання всіх замовлень поточного клієнта
 $sql = "
 SELECT 
@@ -53,6 +99,23 @@ $stmtOrders = $pdo->prepare($ordersSql);
 $stmtOrders->execute([':client_id' => $client_id]);
 $ordersResult = $stmtOrders->fetchAll(PDO::FETCH_ASSOC);
 
+// Load existing reviews for these receipts
+$receiptIds = array_column($receipts, 'receipt_id');
+$reviewsByReceipt = [];
+if (!empty($receiptIds)) {
+    // build placeholder list
+    $placeholders = implode(',', array_fill(0, count($receiptIds), '?'));
+    $sqlReviews = "SELECT receipt_id, rating, description FROM review WHERE receipt_id IN ($placeholders) AND client_id = ?";
+    $stmtRev = $pdo->prepare($sqlReviews);
+    $params = $receiptIds;
+    $params[] = $client_id;
+    $stmtRev->execute($params);
+    $revRows = $stmtRev->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($revRows as $r) {
+        $reviewsByReceipt[$r['receipt_id']] = $r;
+    }
+}
+
 // Групування товарів по чеках
 $ordersByReceipt = [];
 foreach ($ordersResult as $order) {
@@ -74,6 +137,11 @@ foreach ($ordersResult as $order) {
         <h2>Історія замовлень</h2>
         <a href="profile_page.php" class="btn btn-secondary">← Назад до профілю</a>
     </div>
+
+    <?php if (!empty($_SESSION['review_message'])): ?>
+        <div class="alert alert-info"><?php echo htmlspecialchars($_SESSION['review_message']); ?></div>
+        <?php unset($_SESSION['review_message']); ?>
+    <?php endif; ?>
 
     <?php if (empty($receipts)): ?>
         <div class="alert alert-info">
@@ -151,6 +219,37 @@ foreach ($ordersResult as $order) {
 
                 <div class="total-sum">
                     Загальна сума: <?= number_format($totalSum, 2) ?> грн
+                </div>
+
+                <?php $existingReview = $reviewsByReceipt[$receiptId] ?? null; ?>
+                <div class="review-section p-3 border-top">
+                    <?php if ($existingReview): ?>
+                        <div class="existing-review mb-3">
+                            <div><strong>Ваш відгук: <?= htmlspecialchars($existingReview['rating']) ?>/5</strong></div>
+                            <?php if (!empty($existingReview['description'])): ?>
+                                <div class="mt-2">&quot;<?= nl2br(htmlspecialchars($existingReview['description'])) ?>&quot;</div>
+                            <?php endif; ?>
+                        </div>
+                    <?php else: ?>
+                        <form method="post" class="row g-2 align-items-end">
+                            <input type="hidden" name="action" value="save_review">
+                            <input type="hidden" name="receipt_id" value="<?= $receiptId ?>">
+
+                            <div class="col-auto">
+                                <label class="form-label">Рейтинг</label>
+                                <input type="number" name="rating" class="form-control" step="0.5" min="0" max="5" value="3.0">
+                            </div>
+
+                            <div class="col">
+                                <label class="form-label">Коментар</label>
+                                <textarea name="description" class="form-control" rows="2"></textarea>
+                            </div>
+
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary">Зберегти відгук</button>
+                            </div>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </div>
 
